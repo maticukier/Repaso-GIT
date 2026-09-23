@@ -427,8 +427,18 @@ function ResultModal({
     return () => clearInterval(id);
   }, [visible]);
 
+  const [copied, setCopied] = useState(false);
   const share = () => {
-    Share.share({ message: shareText(number, elapsed, revealedCount) }).catch(() => {});
+    const message = shareText(number, elapsed, revealedCount);
+    if (Platform.OS === 'web') {
+      // En el navegador copiamos el resultado para pegarlo donde quieras.
+      navigator.clipboard
+        ?.writeText(message)
+        .then(() => setCopied(true))
+        .catch(() => {});
+      return;
+    }
+    Share.share({ message }).catch(() => {});
   };
 
   return (
@@ -451,7 +461,9 @@ function ResultModal({
           <Text style={styles.modalBody}>Próximo crucigrama en {formatCountdown(countdown)}</Text>
           {completed && (
             <Pressable onPress={share} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Compartir resultado</Text>
+              <Text style={styles.primaryButtonText}>
+                {copied ? '¡Copiado!' : 'Compartir resultado'}
+              </Text>
             </Pressable>
           )}
           <Pressable onPress={onClose} style={styles.secondaryButton}>
