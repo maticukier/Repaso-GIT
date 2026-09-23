@@ -13,4 +13,7 @@ export const colors = {
   key: '#FFFFFF',
   keyAction: '#CDE8D6',
   surface: '#F3F7F4',
+  correct: '#2E9E55',
+  present: '#D9A21B',
+  absent: '#7B8A82',
 };

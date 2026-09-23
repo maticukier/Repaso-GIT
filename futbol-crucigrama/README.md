@@ -1,12 +1,13 @@
 # ⚽ Crucigrama Futbolero
 
-App de celular (Expo / React Native) con tres crucigramas de fútbol nuevos cada día.
+App de celular (Expo / React Native) con juegos de fútbol diarios: tres crucigramas y **Adiviná el crack**.
 
 - **Tres crucigramas por día**, iguales para todos: se generan de forma determinística a partir de la fecha.
   - **Fácil** (11×11): términos de fútbol, cracks y clubes conocidos.
   - **Medio** (11×11): clubes, estadios, selecciones y jugadores.
   - **Difícil** (12×12): apodos, leyendas, clubes por su sobrenombre e historia.
 - Cada nivel tiene su propio progreso, racha y estadísticas.
+- **Adiviná el crack**: estilo Wordle. Una palabra por día (jugador, club o término de fútbol, de 5 a 7 letras) y 6 intentos. Verde = letra en su lugar, amarillo = está en otro lugar, gris = no está. Después del 3er intento aparece una pista. Tiene racha, % de victorias y gráfico de intentos.
 - Teclado en pantalla, tocar una casilla dos veces cambia entre horizontal y vertical, flechas para pasar de pista.
 - **Revisar** marca en rojo las letras incorrectas; **Revelar letra** ayuda (y queda registrado).
 - Cronómetro, racha de días seguidos, estadísticas y botón para compartir el resultado.
@@ -36,5 +37,6 @@ npx expo lint       # ESLint
 - `src/lib/generator.ts` — arma la grilla cruzando palabras.
 - `src/lib/daily.ts` — niveles y crucigrama del día a partir de la fecha.
 - `src/lib/game.ts` — lógica de navegación y verificación.
+- `src/lib/wordle.ts` — palabra del día y colores de Adiviná el crack.
 - `src/lib/storage.ts` — progreso y estadísticas.
-- `src/components/` — grilla y teclado.
+- `src/components/` — grilla, teclado, encabezado y pantalla de Adiviná el crack.

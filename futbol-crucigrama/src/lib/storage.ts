@@ -79,3 +79,69 @@ export async function recordWin(day: string, level: Level, clean: boolean): Prom
   await writeJson(statsKey(level), stats);
   return stats;
 }
+
+// "Adiviná el crack"
+
+export type WordleProgress = {
+  guesses: string[];
+  finished: boolean;
+  won: boolean;
+};
+
+export type WordleStats = {
+  played: number;
+  wins: number;
+  currentStreak: number;
+  maxStreak: number;
+  lastWinDate: string | null;
+  // distribution[i] = partidas ganadas en i + 1 intentos
+  distribution: number[];
+};
+
+export const EMPTY_WORDLE_STATS: WordleStats = {
+  played: 0,
+  wins: 0,
+  currentStreak: 0,
+  maxStreak: 0,
+  lastWinDate: null,
+  distribution: [0, 0, 0, 0, 0, 0],
+};
+
+const WORDLE_STATS_KEY = 'stats:adivina';
+
+export const loadWordleProgress = (day: string) => readJson<WordleProgress>(`adivina:${day}`);
+export const saveWordleProgress = (day: string, progress: WordleProgress) =>
+  writeJson(`adivina:${day}`, progress);
+
+export async function loadWordleStats(today: string): Promise<WordleStats> {
+  const stats = { ...EMPTY_WORDLE_STATS, ...(await readJson<WordleStats>(WORDLE_STATS_KEY)) };
+  if (stats.lastWinDate && daysBetween(stats.lastWinDate, today) > 1) stats.currentStreak = 0;
+  return stats;
+}
+
+export function applyWordleResult(
+  stats: WordleStats,
+  day: string,
+  won: boolean,
+  attempts: number,
+): WordleStats {
+  if (!won) return { ...stats, played: stats.played + 1, currentStreak: 0 };
+  const continues = stats.lastWinDate !== null && daysBetween(stats.lastWinDate, day) === 1;
+  const currentStreak = continues ? stats.currentStreak + 1 : 1;
+  const distribution = stats.distribution.slice();
+  distribution[attempts - 1]++;
+  return {
+    played: stats.played + 1,
+    wins: stats.wins + 1,
+    currentStreak,
+    maxStreak: Math.max(stats.maxStreak, currentStreak),
+    lastWinDate: day,
+    distribution,
+  };
+}
+
+export async function recordWordleResult(day: string, won: boolean, attempts: number) {
+  const stats = applyWordleResult(await loadWordleStats(day), day, won, attempts);
+  await writeJson(WORDLE_STATS_KEY, stats);
+  return stats;
+}

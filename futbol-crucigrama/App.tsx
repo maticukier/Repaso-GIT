@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import AdivinaGame from './src/components/AdivinaGame';
 import Grid from './src/components/Grid';
+import Header from './src/components/Header';
 import Keyboard from './src/components/Keyboard';
 import {
   dateKey,
@@ -42,6 +44,7 @@ import {
   loadProgress,
   loadStats,
   recordWin,
+  loadWordleProgress,
   saveProgress,
   type Stats,
 } from './src/lib/storage';
@@ -58,6 +61,13 @@ export default function App() {
   );
 }
 
+type Mode = 'crucigrama' | 'adivina';
+
+const MODES: { id: Mode; label: string }[] = [
+  { id: 'crucigrama', label: '🧩 Crucigrama' },
+  { id: 'adivina', label: '🎯 Adiviná el crack' },
+];
+
 function Game() {
   const [day, setDay] = useState(dateKey);
 
@@ -67,15 +77,21 @@ function Game() {
     return () => clearInterval(id);
   }, []);
 
+  const [mode, setMode] = useState<Mode>('crucigrama');
   const [level, setLevel] = useState<Level>('facil');
   const [done, setDone] = useState<Partial<Record<Level, boolean>>>({});
+  const [adivinaDone, setAdivinaDone] = useState(false);
 
-  // Qué niveles del día ya están completos, para marcarlos en las pestañas.
+  // Qué juegos del día ya están terminados, para marcarlos en las pestañas.
   useEffect(() => {
     let cancelled = false;
-    Promise.all(LEVELS.map((l) => loadProgress(day, l.id))).then((all) => {
+    Promise.all([
+      Promise.all(LEVELS.map((l) => loadProgress(day, l.id))),
+      loadWordleProgress(day),
+    ]).then(([all, adivina]) => {
       if (cancelled) return;
       setDone(Object.fromEntries(LEVELS.map((l, i) => [l.id, !!all[i]?.completed])));
+      setAdivinaDone(!!adivina?.finished);
     });
     return () => {
       cancelled = true;
@@ -83,8 +99,47 @@ function Game() {
   }, [day]);
 
   const onCompleted = useCallback((l: Level) => setDone((prev) => ({ ...prev, [l]: true })), []);
+  const onAdivinaFinished = useCallback(() => setAdivinaDone(true), []);
 
-  const tabs = (
+  const crucigramaDone = LEVELS.every((l) => done[l.id]);
+  const modeTabs = (
+    <View style={styles.modeTabs}>
+      {MODES.map((m) => {
+        const active = m.id === mode;
+        const finished = m.id === 'crucigrama' ? crucigramaDone : adivinaDone;
+        return (
+          <Pressable
+            key={m.id}
+            onPress={() => setMode(m.id)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            style={[styles.modeTab, active && styles.modeTabActive]}
+          >
+            <Text style={[styles.modeTabText, active && styles.modeTabTextActive]}>
+              {m.label}
+              {finished ? ' ✓' : ''}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  const subtitle = `#${puzzleNumber(day)} · ${formatDay(day)}`;
+
+  if (mode === 'adivina') {
+    return (
+      <AdivinaGame
+        key={day}
+        day={day}
+        subtitle={subtitle}
+        tabs={modeTabs}
+        onFinished={onAdivinaFinished}
+      />
+    );
+  }
+
+  const levelTabs = (
     <View style={styles.tabs}>
         {LEVELS.map((l) => {
           const active = l.id === level;
@@ -111,7 +166,13 @@ function Game() {
       key={`${day}:${level}`}
       day={day}
       level={level}
-      tabs={tabs}
+      subtitle={subtitle}
+      tabs={
+        <>
+          {modeTabs}
+          {levelTabs}
+        </>
+      }
       onCompleted={onCompleted}
     />
   );
@@ -120,11 +181,13 @@ function Game() {
 function DailyGame({
   day,
   level,
+  subtitle,
   tabs,
   onCompleted,
 }: {
   day: string;
   level: Level;
+  subtitle: string;
   tabs: ReactNode;
   onCompleted: (level: Level) => void;
 }) {
@@ -315,19 +378,18 @@ function DailyGame({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>⚽ Crucigrama Futbolero</Text>
-          <Text style={styles.subtitle}>
-            #{number} · {formatDay(day)}
-          </Text>
-        </View>
-        <Pressable onPress={() => setShowResult(true)} style={styles.timer}>
-          <Text style={styles.timerText}>{formatTime(elapsed)}</Text>
-          <Text style={styles.streak}>🔥 {stats.currentStreak}</Text>
-        </Pressable>
-      </View>
-      {tabs}
+      <Header
+        title="⚽ Crucigrama Futbolero"
+        subtitle={subtitle}
+        right={
+          <Pressable onPress={() => setShowResult(true)} style={styles.timer}>
+            <Text style={styles.timerText}>{formatTime(elapsed)}</Text>
+            <Text style={styles.streak}>🔥 {stats.currentStreak}</Text>
+          </Pressable>
+        }
+      >
+        {tabs}
+      </Header>
 
       <View style={styles.boardArea}>
         <Grid
@@ -574,19 +636,26 @@ function formatCountdown(ms: number) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.pitch },
   container: { flex: 1, backgroundColor: colors.surface },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: colors.pitch,
-  },
-  title: { color: colors.chalk, fontSize: 20, fontWeight: '800' },
-  subtitle: { color: '#BFE5CD', fontSize: 13, marginTop: 2 },
   timer: { alignItems: 'flex-end' },
   timerText: { color: colors.chalk, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
   streak: { color: colors.chalk, fontSize: 13, marginTop: 2 },
+  modeTabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.pitchDark,
+  },
+  modeTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  modeTabActive: { borderBottomColor: colors.chalk },
+  modeTabText: { color: '#BFE5CD', fontWeight: '700', fontSize: 15 },
+  modeTabTextActive: { color: colors.chalk },
   tabs: {
     flexDirection: 'row',
     gap: 6,

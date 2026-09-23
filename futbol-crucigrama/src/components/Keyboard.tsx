@@ -5,25 +5,52 @@ import { colors } from '../theme';
 
 const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
 
+export type KeyStatus = 'correct' | 'present' | 'absent';
+
 type Props = {
   onLetter: (letter: string) => void;
   onBackspace: () => void;
+  // Si se pasa, aparece la tecla ENVIAR (para Adiviná el crack).
+  onEnter?: () => void;
+  statuses?: Record<string, KeyStatus>;
 };
 
-function Keyboard({ onLetter, onBackspace }: Props) {
+const STATUS_COLORS: Record<KeyStatus, string> = {
+  correct: colors.correct,
+  present: colors.present,
+  absent: colors.absent,
+};
+
+function Keyboard({ onLetter, onBackspace, onEnter, statuses }: Props) {
   return (
     <View style={styles.keyboard}>
       {ROWS.map((row, i) => (
         <View key={row} style={styles.row}>
-          {Array.from(row).map((letter) => (
+          {i === ROWS.length - 1 && onEnter && (
             <Pressable
-              key={letter}
-              onPress={() => onLetter(letter)}
-              style={({ pressed }) => [styles.key, pressed && styles.pressed]}
+              onPress={onEnter}
+              accessibilityLabel="Enviar"
+              style={({ pressed }) => [styles.key, styles.wide, pressed && styles.pressed]}
             >
-              <Text style={styles.keyText}>{letter}</Text>
+              <Text style={styles.enterText}>ENVIAR</Text>
             </Pressable>
-          ))}
+          )}
+          {Array.from(row).map((letter) => {
+            const status = statuses?.[letter];
+            return (
+              <Pressable
+                key={letter}
+                onPress={() => onLetter(letter)}
+                style={({ pressed }) => [
+                  styles.key,
+                  status && { backgroundColor: STATUS_COLORS[status] },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={[styles.keyText, status && styles.keyTextOnColor]}>{letter}</Text>
+              </Pressable>
+            );
+          })}
           {i === ROWS.length - 1 && (
             <Pressable
               onPress={onBackspace}
@@ -57,4 +84,6 @@ const styles = StyleSheet.create({
   wide: { flex: 1.6, maxWidth: 64, backgroundColor: colors.keyAction },
   pressed: { opacity: 0.6 },
   keyText: { fontSize: 18, fontWeight: '600', color: colors.text },
+  keyTextOnColor: { color: colors.chalk },
+  enterText: { fontSize: 11, fontWeight: '800', color: colors.text },
 });
