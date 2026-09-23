@@ -1,0 +1,16 @@
+export const colors = {
+  pitch: '#0B6E3A',
+  pitchDark: '#08552D',
+  chalk: '#FFFFFF',
+  block: '#0B6E3A',
+  cell: '#FFFFFF',
+  cellWord: '#D6F5E0',
+  cellActive: '#FFD23F',
+  cellWrong: '#FFC9C9',
+  text: '#10231A',
+  textMuted: '#5B7064',
+  revealed: '#1C64D6',
+  key: '#FFFFFF',
+  keyAction: '#CDE8D6',
+  surface: '#F3F7F4',
+};
