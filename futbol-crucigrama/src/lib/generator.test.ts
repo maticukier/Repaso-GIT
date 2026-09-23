@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { WORDS } from '../data/words';
-import { daysBetween, getDailyPuzzle, puzzleNumber } from './daily';
+import { WORDS_DIFICIL } from '../data/words-dificil';
+import { WORDS_MEDIO } from '../data/words-medio';
+import { daysBetween, getDailyPuzzle, LEVELS, puzzleNumber } from './daily';
 import type { Puzzle } from './generator';
 
 function dayKeys(count: number): string[] {
@@ -37,14 +39,21 @@ function readRuns(p: Puzzle) {
   return runs.sort();
 }
 
-test('las respuestas del banco son válidas y únicas', () => {
-  const seen = new Set<string>();
-  for (const { answer, clue } of WORDS) {
-    assert.match(answer, /^[A-Z]{3,12}$/, answer);
-    assert.ok(clue.length > 0);
-    assert.ok(!seen.has(answer), `repetida: ${answer}`);
-    seen.add(answer);
-  }
+for (const [name, bank] of Object.entries({ WORDS, WORDS_MEDIO, WORDS_DIFICIL })) {
+  test(`las respuestas de ${name} son válidas y únicas`, () => {
+    const seen = new Set<string>();
+    for (const { answer, clue } of bank) {
+      assert.match(answer, /^[A-Z]{3,12}$/, answer);
+      assert.ok(clue.length > 0);
+      assert.ok(!seen.has(answer), `repetida: ${answer}`);
+      seen.add(answer);
+    }
+  });
+}
+
+test('el fácil de hoy no cambió al agregar niveles', () => {
+  const words = getDailyPuzzle('2026-09-23', 'facil').words.map((w) => w.answer);
+  assert.deepEqual(words.slice(0, 3), ['CRACK', 'SAQUE', 'PALO']);
 });
 
 test('el mismo día genera el mismo crucigrama', () => {
@@ -63,10 +72,11 @@ test('numeración de los crucigramas', () => {
   assert.equal(daysBetween('2026-12-31', '2027-01-01'), 1);
 });
 
-for (const key of dayKeys(120)) {
-  test(`crucigrama válido para ${key}`, () => {
-    const p = getDailyPuzzle(key);
-    assert.ok(p.rows <= 11 && p.cols <= 11, `tamaño ${p.rows}x${p.cols}`);
+for (const { id: level } of LEVELS) for (const key of dayKeys(120)) {
+  test(`crucigrama ${level} válido para ${key}`, () => {
+    const p = getDailyPuzzle(key, level);
+    const max = level === 'dificil' ? 12 : 11;
+    assert.ok(p.rows <= max && p.cols <= max, `tamaño ${p.rows}x${p.cols}`);
     assert.ok(p.words.length >= 7, `solo ${p.words.length} palabras`);
 
     const expected = p.words

@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
   Platform,
@@ -15,7 +15,15 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import Grid from './src/components/Grid';
 import Keyboard from './src/components/Keyboard';
-import { dateKey, getDailyPuzzle, msUntilNextPuzzle, puzzleNumber } from './src/lib/daily';
+import {
+  dateKey,
+  getDailyPuzzle,
+  type Level,
+  levelLabel,
+  LEVELS,
+  msUntilNextPuzzle,
+  puzzleNumber,
+} from './src/lib/daily';
 import type { Direction, PlacedWord } from './src/lib/generator';
 import {
   cellsOf,
@@ -59,11 +67,68 @@ function Game() {
     return () => clearInterval(id);
   }, []);
 
-  return <DailyGame key={day} day={day} />;
+  const [level, setLevel] = useState<Level>('facil');
+  const [done, setDone] = useState<Partial<Record<Level, boolean>>>({});
+
+  // Qué niveles del día ya están completos, para marcarlos en las pestañas.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(LEVELS.map((l) => loadProgress(day, l.id))).then((all) => {
+      if (cancelled) return;
+      setDone(Object.fromEntries(LEVELS.map((l, i) => [l.id, !!all[i]?.completed])));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [day]);
+
+  const onCompleted = useCallback((l: Level) => setDone((prev) => ({ ...prev, [l]: true })), []);
+
+  const tabs = (
+    <View style={styles.tabs}>
+        {LEVELS.map((l) => {
+          const active = l.id === level;
+          return (
+            <Pressable
+              key={l.id}
+              onPress={() => setLevel(l.id)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              style={[styles.tab, active && styles.tabActive]}
+            >
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                {l.label}
+                {done[l.id] ? ' ✓' : ''}
+              </Text>
+            </Pressable>
+          );
+        })}
+    </View>
+  );
+
+  return (
+    <DailyGame
+      key={`${day}:${level}`}
+      day={day}
+      level={level}
+      tabs={tabs}
+      onCompleted={onCompleted}
+    />
+  );
 }
 
-function DailyGame({ day }: { day: string }) {
-  const puzzle = useMemo(() => getDailyPuzzle(day), [day]);
+function DailyGame({
+  day,
+  level,
+  tabs,
+  onCompleted,
+}: {
+  day: string;
+  level: Level;
+  tabs: ReactNode;
+  onCompleted: (level: Level) => void;
+}) {
+  const puzzle = useMemo(() => getDailyPuzzle(day, level), [day, level]);
   const { width } = useWindowDimensions();
 
   const [entries, setEntries] = useState(() => emptyEntries(puzzle));
@@ -83,7 +148,7 @@ function DailyGame({ day }: { day: string }) {
   // Cargar el progreso guardado del día.
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadProgress(day), loadStats(day)]).then(([progress, savedStats]) => {
+    Promise.all([loadProgress(day, level), loadStats(day, level)]).then(([progress, savedStats]) => {
       if (cancelled) return;
       if (progress) {
         setEntries(progress.entries);
@@ -97,7 +162,7 @@ function DailyGame({ day }: { day: string }) {
     return () => {
       cancelled = true;
     };
-  }, [day, puzzle]);
+  }, [day, level]);
 
   // Reloj: suma segundos mientras se juega.
   useEffect(() => {
@@ -109,16 +174,17 @@ function DailyGame({ day }: { day: string }) {
   // Guardar el progreso.
   useEffect(() => {
     if (!loaded) return;
-    saveProgress(day, { entries, revealed: [...revealed], elapsed, completed });
-  }, [day, loaded, entries, revealed, elapsed, completed]);
+    saveProgress(day, level, { entries, revealed: [...revealed], elapsed, completed });
+  }, [day, level, loaded, entries, revealed, elapsed, completed]);
 
   // Detectar cuando se completa el crucigrama.
   useEffect(() => {
     if (!loaded || completed || !isSolved(puzzle, entries)) return;
     setCompleted(true);
     setShowResult(true);
-    recordWin(day, revealed.size === 0).then(setStats);
-  }, [loaded, completed, puzzle, entries, day, revealed]);
+    onCompleted(level);
+    recordWin(day, level, revealed.size === 0).then(setStats);
+  }, [loaded, completed, puzzle, entries, day, level, revealed, onCompleted]);
 
   const activeWord: PlacedWord =
     wordAt(puzzle, selected, direction) ??
@@ -261,6 +327,7 @@ function DailyGame({ day }: { day: string }) {
           <Text style={styles.streak}>🔥 {stats.currentStreak}</Text>
         </Pressable>
       </View>
+      {tabs}
 
       <View style={styles.boardArea}>
         <Grid
@@ -319,6 +386,7 @@ function DailyGame({ day }: { day: string }) {
         visible={showResult}
         completed={completed}
         number={number}
+        level={level}
         elapsed={elapsed}
         revealedCount={revealed.size}
         stats={stats}
@@ -406,6 +474,7 @@ function ResultModal({
   visible,
   completed,
   number,
+  level,
   elapsed,
   revealedCount,
   stats,
@@ -414,6 +483,7 @@ function ResultModal({
   visible: boolean;
   completed: boolean;
   number: number;
+  level: Level;
   elapsed: number;
   revealedCount: number;
   stats: Stats;
@@ -429,7 +499,7 @@ function ResultModal({
 
   const [copied, setCopied] = useState(false);
   const share = () => {
-    const message = shareText(number, elapsed, revealedCount);
+    const message = shareText(number, levelLabel(level), elapsed, revealedCount);
     if (Platform.OS === 'web') {
       // En el navegador copiamos el resultado para pegarlo donde quieras.
       navigator.clipboard
@@ -445,10 +515,12 @@ function ResultModal({
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>{completed ? '¡GOOOOL! 🏆' : 'Estadísticas'}</Text>
+          <Text style={styles.modalTitle}>
+            {completed ? '¡GOOOOL! 🏆' : `Estadísticas · ${levelLabel(level)}`}
+          </Text>
           {completed && (
             <Text style={styles.modalBody}>
-              Completaste el crucigrama #{number} en {formatTime(elapsed)}
+              Completaste el crucigrama #{number} ({levelLabel(level).toLowerCase()}) en {formatTime(elapsed)}
               {revealedCount === 0 ? ' sin ayuda.' : ` con ${revealedCount} letra(s) revelada(s).`}
             </Text>
           )}
@@ -515,6 +587,23 @@ const styles = StyleSheet.create({
   timer: { alignItems: 'flex-end' },
   timerText: { color: colors.chalk, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
   streak: { color: colors.chalk, fontSize: 13, marginTop: 2 },
+  tabs: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+    backgroundColor: colors.pitch,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 7,
+    borderRadius: 16,
+    alignItems: 'center',
+    backgroundColor: colors.pitchDark,
+  },
+  tabActive: { backgroundColor: colors.chalk },
+  tabText: { color: '#BFE5CD', fontWeight: '700', fontSize: 14 },
+  tabTextActive: { color: colors.pitchDark },
   boardArea: { flex: 1, justifyContent: 'center', paddingVertical: 12, gap: 12 },
   actions: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
   actionButton: {

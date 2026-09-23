@@ -47,9 +47,9 @@ export function firstEmptyCell(word: PlacedWord, entries: string[][]): Pos {
 }
 
 // Arma el texto para compartir el resultado, estilo Wordle.
-export function shareText(num: number, seconds: number, revealed: number): string {
+export function shareText(num: number, level: string, seconds: number, revealed: number): string {
   const help = revealed === 0 ? '⚽ ¡Sin ayuda!' : `💡 ${revealed} letra${revealed === 1 ? '' : 's'} revelada${revealed === 1 ? '' : 's'}`;
-  return `Crucigrama Futbolero #${num}\n⏱️ ${formatTime(seconds)}\n${help}`;
+  return `Crucigrama Futbolero #${num} · ${level}\n⏱️ ${formatTime(seconds)}\n${help}`;
 }
 
 export function formatTime(total: number): string {

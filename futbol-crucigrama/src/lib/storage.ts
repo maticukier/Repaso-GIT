@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { daysBetween } from './daily';
+import { daysBetween, type Level } from './daily';
 
 export type Progress = {
   entries: string[][];
@@ -25,8 +25,10 @@ export const EMPTY_STATS: Stats = {
   lastWinDate: null,
 };
 
-const PROGRESS_PREFIX = 'progress:';
-const STATS_KEY = 'stats';
+// El nivel fácil usa las claves originales para conservar el progreso guardado.
+const progressKey = (day: string, level: Level) =>
+  level === 'facil' ? `progress:${day}` : `progress:${level}:${day}`;
+const statsKey = (level: Level) => (level === 'facil' ? 'stats' : `stats:${level}`);
 
 async function readJson<T>(key: string): Promise<T | null> {
   try {
@@ -45,13 +47,14 @@ async function writeJson(key: string, value: unknown) {
   }
 }
 
-export const loadProgress = (day: string) => readJson<Progress>(PROGRESS_PREFIX + day);
-export const saveProgress = (day: string, progress: Progress) =>
-  writeJson(PROGRESS_PREFIX + day, progress);
+export const loadProgress = (day: string, level: Level) =>
+  readJson<Progress>(progressKey(day, level));
+export const saveProgress = (day: string, level: Level, progress: Progress) =>
+  writeJson(progressKey(day, level), progress);
 
 // La racha se corta si el último crucigrama ganado no fue ni hoy ni ayer.
-export async function loadStats(today: string): Promise<Stats> {
-  const stats = { ...EMPTY_STATS, ...(await readJson<Stats>(STATS_KEY)) };
+export async function loadStats(today: string, level: Level): Promise<Stats> {
+  const stats = { ...EMPTY_STATS, ...(await readJson<Stats>(statsKey(level))) };
   if (stats.lastWinDate && daysBetween(stats.lastWinDate, today) > 1) {
     stats.currentStreak = 0;
   }
@@ -71,8 +74,8 @@ export function applyWin(stats: Stats, day: string, clean: boolean): Stats {
   };
 }
 
-export async function recordWin(day: string, clean: boolean): Promise<Stats> {
-  const stats = applyWin(await loadStats(day), day, clean);
-  await writeJson(STATS_KEY, stats);
+export async function recordWin(day: string, level: Level, clean: boolean): Promise<Stats> {
+  const stats = applyWin(await loadStats(day, level), day, clean);
+  await writeJson(statsKey(level), stats);
   return stats;
 }
