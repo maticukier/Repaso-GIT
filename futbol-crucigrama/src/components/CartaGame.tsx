@@ -27,6 +27,7 @@ import {
 } from '../lib/storage';
 import { colors } from '../theme';
 import DailyResult from './DailyResult';
+import Flag from './Flag';
 import Header from './Header';
 
 type Props = {
@@ -124,7 +125,15 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
             <View style={styles.cardSide}>
               <Text style={styles.ovr}>{show.overall ? card.ovr : '??'}</Text>
               <Text style={styles.pos}>{show.position ? posCode : '?'}</Text>
-              <Text style={styles.flag}>{show.nation ? nation.flag : '❔'}</Text>
+              <View style={styles.flag}>
+                {show.nation ? (
+                  <Flag code={nation.flag} width={34} />
+                ) : (
+                  <View style={styles.flagHidden}>
+                    <Text style={styles.flagHiddenText}>?</Text>
+                  </View>
+                )}
+              </View>
             </View>
             <View style={styles.silhouette}>
               <Text style={styles.silhouetteText}>{finished ? '⚽' : '?'}</Text>
@@ -158,7 +167,11 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
         </View>
 
         <View style={styles.clues}>
-          <Clue label="Nacionalidad" value={show.nation ? `${nation.flag} ${nation.name}` : null} />
+          <Clue
+            label="Nacionalidad"
+            value={show.nation ? nation.name : null}
+            flag={show.nation ? nation.flag : undefined}
+          />
           <Clue label="Posición" value={show.position ? `${posCode} · ${posName}` : null} />
           {finished && <Clue label="Club" value={card.club} />}
         </View>
@@ -195,7 +208,7 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
                 style={({ pressed }) => [styles.suggestion, pressed && { opacity: 0.6 }]}
               >
                 <Text style={styles.suggestionName}>{s.name}</Text>
-                <Text style={styles.suggestionNat}>{nationLabel(s.nat).flag}</Text>
+                <Flag code={nationLabel(s.nat).flag} width={26} />
               </Pressable>
             ))}
             {query.trim().length >= 2 && suggestions.length === 0 && (
@@ -233,11 +246,22 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
   );
 }
 
-function Clue({ label, value }: { label: string; value: string | null }) {
+function Clue({
+  label,
+  value,
+  flag,
+}: {
+  label: string;
+  value: string | null;
+  flag?: string | null;
+}) {
   return (
     <View style={styles.clue}>
       <Text style={styles.clueLabel}>{label}</Text>
-      <Text style={[styles.clueValue, !value && styles.clueLocked]}>{value ?? '🔒'}</Text>
+      <View style={styles.clueRow}>
+        {flag !== undefined && <Flag code={flag} width={20} />}
+        <Text style={[styles.clueValue, !value && styles.clueLocked]}>{value ?? '🔒'}</Text>
+      </View>
     </View>
   );
 }
@@ -265,7 +289,16 @@ const styles = StyleSheet.create({
   cardSide: { alignItems: 'center', width: 48 },
   ovr: { fontSize: 34, fontWeight: '900', color: GOLD_DARK, lineHeight: 38 },
   pos: { fontSize: 16, fontWeight: '800', color: GOLD_DARK },
-  flag: { fontSize: 22, marginTop: 4 },
+  flag: { marginTop: 6 },
+  flagHidden: {
+    width: 34,
+    height: 26,
+    borderRadius: 3,
+    backgroundColor: 'rgba(122, 91, 18, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flagHiddenText: { color: GOLD_DARK, fontWeight: '900' },
   silhouette: {
     width: 96,
     height: 96,
@@ -315,6 +348,7 @@ const styles = StyleSheet.create({
     borderColor: '#D5E2D9',
   },
   clueLabel: { fontSize: 11, color: colors.textMuted, fontWeight: '700' },
+  clueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   clueValue: { fontSize: 14, color: colors.text, fontWeight: '700' },
   clueLocked: { color: colors.textMuted },
   guessArea: { width: '100%', maxWidth: 440, gap: 6 },
@@ -341,7 +375,6 @@ const styles = StyleSheet.create({
     borderColor: '#D5E2D9',
   },
   suggestionName: { fontSize: 15, color: colors.text, fontWeight: '600', flexShrink: 1 },
-  suggestionNat: { fontSize: 18 },
   noResults: { fontSize: 13, color: colors.textMuted, textAlign: 'center' },
   finalBox: { alignItems: 'center', gap: 10 },
   finalTitle: { fontSize: 18, fontWeight: '800', color: colors.pitchDark, textAlign: 'center' },

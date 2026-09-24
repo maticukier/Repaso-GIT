@@ -148,21 +148,19 @@ const NATIONS: Record<string, [string, string]> = {
   Wales: ['Gales', 'WLS'],
 };
 
-const UK_FLAGS: Record<string, string> = {
-  ENG: '🏴\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
-  SCT: '🏴\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
-  WLS: '🏴\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}',
-  NIR: '🇬🇧',
+const SUBDIVISIONS: Record<string, string> = {
+  ENG: 'gb-eng',
+  SCT: 'gb-sct',
+  WLS: 'gb-wls',
+  NIR: 'gb-nir',
 };
 
-export function nationLabel(nat: string): { name: string; flag: string } {
+// `flag` es el código de la imagen en src/data/flags.ts.
+export function nationLabel(nat: string): { name: string; flag: string | null } {
   const entry = NATIONS[nat];
-  if (!entry) return { name: nat, flag: '🏳️' };
+  if (!entry) return { name: nat, flag: null };
   const [name, code] = entry;
-  const flag =
-    UK_FLAGS[code] ??
-    String.fromCodePoint(...Array.from(code).map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
-  return { name, flag };
+  return { name, flag: SUBDIVISIONS[code] ?? code.toLowerCase() };
 }
 
 // Cada día un jugador distinto (sin repetir hasta dar la vuelta) y una

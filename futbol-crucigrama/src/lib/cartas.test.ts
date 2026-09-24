@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import data from '../data/fifa-cards.json';
+import { FLAGS } from '../data/flags';
 import {
   answerCount,
   cartaShareText,
@@ -26,11 +27,13 @@ test('los datos son coherentes', () => {
   }
 });
 
-test('todas las nacionalidades tienen nombre en español', () => {
+test('todas las nacionalidades tienen nombre en español y bandera', () => {
   for (const [, , nat] of data.search) {
-    assert.notEqual(nationLabel(nat as string).flag, '🏳️', nat as string);
+    const { flag } = nationLabel(nat as string);
+    assert.ok(flag && FLAGS[flag], `sin bandera: ${nat}`);
   }
-  assert.deepEqual(nationLabel('Germany'), { name: 'Alemania', flag: '🇩🇪' });
+  assert.deepEqual(nationLabel('Germany'), { name: 'Alemania', flag: 'de' });
+  assert.deepEqual(nationLabel('England'), { name: 'Inglaterra', flag: 'gb-eng' });
 });
 
 test('una carta por día, sin repetir jugador hasta dar la vuelta', () => {
