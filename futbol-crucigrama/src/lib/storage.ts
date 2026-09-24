@@ -113,8 +113,12 @@ export const loadWordleProgress = (day: string) => readJson<WordleProgress>(`adi
 export const saveWordleProgress = (day: string, progress: WordleProgress) =>
   writeJson(`adivina:${day}`, progress);
 
-export async function loadWordleStats(today: string): Promise<WordleStats> {
-  const stats = { ...EMPTY_WORDLE_STATS, ...(await readJson<WordleStats>(WORDLE_STATS_KEY)) };
+// Las estadísticas con intentos sirven para Adiviná el crack y para ¿Quién es la carta?.
+export async function loadWordleStats(
+  today: string,
+  key: string = WORDLE_STATS_KEY,
+): Promise<WordleStats> {
+  const stats = { ...EMPTY_WORDLE_STATS, ...(await readJson<WordleStats>(key)) };
   if (stats.lastWinDate && daysBetween(stats.lastWinDate, today) > 1) stats.currentStreak = 0;
   return stats;
 }
@@ -140,8 +144,26 @@ export function applyWordleResult(
   };
 }
 
-export async function recordWordleResult(day: string, won: boolean, attempts: number) {
-  const stats = applyWordleResult(await loadWordleStats(day), day, won, attempts);
-  await writeJson(WORDLE_STATS_KEY, stats);
+export async function recordWordleResult(
+  day: string,
+  won: boolean,
+  attempts: number,
+  key: string = WORDLE_STATS_KEY,
+) {
+  const stats = applyWordleResult(await loadWordleStats(day, key), day, won, attempts);
+  await writeJson(key, stats);
   return stats;
 }
+
+// "¿Quién es la carta?"
+
+export type CartaProgress = {
+  guesses: number[]; // ids de los jugadores elegidos
+  finished: boolean;
+  won: boolean;
+};
+
+export const CARTA_STATS_KEY = 'stats:cartas';
+export const loadCartaProgress = (day: string) => readJson<CartaProgress>(`cartas:${day}`);
+export const saveCartaProgress = (day: string, progress: CartaProgress) =>
+  writeJson(`cartas:${day}`, progress);

@@ -1,6 +1,6 @@
 # ⚽ Crucigrama Futbolero
 
-App de celular (Expo / React Native) con juegos de fútbol diarios: tres crucigramas y **Adiviná el crack**.
+App de celular (Expo / React Native) con juegos de fútbol diarios: tres crucigramas, **Adiviná el crack** y **¿Quién es la carta?**.
 
 - **Tres crucigramas por día**, iguales para todos: se generan de forma determinística a partir de la fecha.
   - **Fácil** (11×11): términos de fútbol, cracks y clubes conocidos.
@@ -12,6 +12,17 @@ App de celular (Expo / React Native) con juegos de fútbol diarios: tres crucigr
 - **Revisar** marca en rojo las letras incorrectas; **Revelar letra** ayuda (y queda registrado).
 - Cronómetro, racha de días seguidos, estadísticas y botón para compartir el resultado.
 - El progreso se guarda en el dispositivo (AsyncStorage), así se puede cerrar la app y seguir después.
+
+- **¿Quién es la carta?**: una carta de FIFA 14 a FC 26 por día y 6 intentos para adivinar el jugador. Al principio se ven 2 stats; con cada error se suma una pista: nacionalidad, posición, 2 stats más, todos los stats y, por último, la media. Los arqueros muestran sus stats de arquero.
+
+## Datos
+
+Los stats de las cartas salen de [mzafram2001/ea-fc](https://github.com/mzafram2001/ea-fc) (licencia MIT, datos de SoFIFA). Para regenerar `src/data/fifa-cards.json`:
+
+```bash
+git clone --depth 1 https://github.com/mzafram2001/ea-fc.git /tmp/ea-fc
+python3 scripts/build-fifa-data.py /tmp/ea-fc/data
+```
 
 ## Cómo correrla
 
@@ -38,5 +49,6 @@ npx expo lint       # ESLint
 - `src/lib/daily.ts` — niveles y crucigrama del día a partir de la fecha.
 - `src/lib/game.ts` — lógica de navegación y verificación.
 - `src/lib/wordle.ts` — palabra del día y colores de Adiviná el crack.
+- `src/lib/cartas.ts` — carta del día, pistas, buscador y nacionalidades de ¿Quién es la carta?.
 - `src/lib/storage.ts` — progreso y estadísticas.
-- `src/components/` — grilla, teclado, encabezado y pantalla de Adiviná el crack.
+- `src/components/` — grilla, teclado, encabezado, pantallas de los juegos y resultado.

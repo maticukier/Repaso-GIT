@@ -14,6 +14,7 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import AdivinaGame from './src/components/AdivinaGame';
+import CartaGame from './src/components/CartaGame';
 import Grid from './src/components/Grid';
 import Header from './src/components/Header';
 import Keyboard from './src/components/Keyboard';
@@ -44,6 +45,7 @@ import {
   loadProgress,
   loadStats,
   recordWin,
+  loadCartaProgress,
   loadWordleProgress,
   saveProgress,
   type Stats,
@@ -61,11 +63,12 @@ export default function App() {
   );
 }
 
-type Mode = 'crucigrama' | 'adivina';
+type Mode = 'crucigrama' | 'adivina' | 'carta';
 
 const MODES: { id: Mode; label: string }[] = [
   { id: 'crucigrama', label: '🧩 Crucigrama' },
-  { id: 'adivina', label: '🎯 Adiviná el crack' },
+  { id: 'adivina', label: '🎯 Adiviná' },
+  { id: 'carta', label: '🃏 La carta' },
 ];
 
 function Game() {
@@ -81,6 +84,7 @@ function Game() {
   const [level, setLevel] = useState<Level>('facil');
   const [done, setDone] = useState<Partial<Record<Level, boolean>>>({});
   const [adivinaDone, setAdivinaDone] = useState(false);
+  const [cartaDone, setCartaDone] = useState(false);
 
   // Qué juegos del día ya están terminados, para marcarlos en las pestañas.
   useEffect(() => {
@@ -88,10 +92,12 @@ function Game() {
     Promise.all([
       Promise.all(LEVELS.map((l) => loadProgress(day, l.id))),
       loadWordleProgress(day),
-    ]).then(([all, adivina]) => {
+      loadCartaProgress(day),
+    ]).then(([all, adivina, carta]) => {
       if (cancelled) return;
       setDone(Object.fromEntries(LEVELS.map((l, i) => [l.id, !!all[i]?.completed])));
       setAdivinaDone(!!adivina?.finished);
+      setCartaDone(!!carta?.finished);
     });
     return () => {
       cancelled = true;
@@ -100,13 +106,15 @@ function Game() {
 
   const onCompleted = useCallback((l: Level) => setDone((prev) => ({ ...prev, [l]: true })), []);
   const onAdivinaFinished = useCallback(() => setAdivinaDone(true), []);
+  const onCartaFinished = useCallback(() => setCartaDone(true), []);
 
   const crucigramaDone = LEVELS.every((l) => done[l.id]);
   const modeTabs = (
     <View style={styles.modeTabs}>
       {MODES.map((m) => {
         const active = m.id === mode;
-        const finished = m.id === 'crucigrama' ? crucigramaDone : adivinaDone;
+        const finished =
+          m.id === 'crucigrama' ? crucigramaDone : m.id === 'adivina' ? adivinaDone : cartaDone;
         return (
           <Pressable
             key={m.id}
@@ -126,6 +134,18 @@ function Game() {
   );
 
   const subtitle = `#${puzzleNumber(day)} · ${formatDay(day)}`;
+
+  if (mode === 'carta') {
+    return (
+      <CartaGame
+        key={day}
+        day={day}
+        subtitle={subtitle}
+        tabs={modeTabs}
+        onFinished={onCartaFinished}
+      />
+    );
+  }
 
   if (mode === 'adivina') {
     return (
