@@ -25,8 +25,8 @@ export const UPGRADES: readonly UpgradeDef[] = [
     name: 'Cadencia',
     description: 'Dispara y recarga la barra más rápido',
     maxLevel: UPGRADE_MAX,
-    baseCost: 40,
-    growth: 1.5,
+    baseCost: 60,
+    growth: 1.6,
     effect: (l) => `+${Math.round((fireRateMult(l) - 1) * 100)}%`,
   },
   {
@@ -34,8 +34,8 @@ export const UPGRADES: readonly UpgradeDef[] = [
     name: 'Munición máxima',
     description: 'Más disparos por nivel y cargador más grande',
     maxLevel: UPGRADE_MAX,
-    baseCost: 50,
-    growth: 1.5,
+    baseCost: 70,
+    growth: 1.6,
     effect: (l) => `+${Math.round((ammoMult(l) - 1) * 100)}%`,
   },
   {
@@ -43,8 +43,8 @@ export const UPGRADES: readonly UpgradeDef[] = [
     name: 'Daño por minion',
     description: 'Cada minion pega más fuerte a torres y defensores',
     maxLevel: UPGRADE_MAX,
-    baseCost: 60,
-    growth: 1.55,
+    baseCost: 80,
+    growth: 1.6,
     effect: (l) => `x${minionDamage(l).toFixed(1)}`,
   },
   {
@@ -52,8 +52,8 @@ export const UPGRADES: readonly UpgradeDef[] = [
     name: 'Puertas potenciadas',
     description: 'Suma +1 por nivel, resta -1 cada 3 niveles y chance de clon extra en multiplicadores',
     maxLevel: UPGRADE_MAX,
-    baseCost: 45,
-    growth: 1.55,
+    baseCost: 70,
+    growth: 1.6,
     effect: (l) => (l === 0 ? '+0' : `+${gateAddBonus(l)} / ${Math.round(gateExtraCloneChance(l) * 100)}%`),
   },
 ];
@@ -64,7 +64,11 @@ export function upgradeDef(id: UpgradeId): UpgradeDef {
   return d;
 }
 
-/** Costo de pasar de `level` a `level + 1`, redondeado a múltiplos de 5. */
+/**
+ * Costo de pasar de `level` a `level + 1`, redondeado a múltiplos de 5.
+ * Con x1.6 por nivel, las primeras compras llegan cada 2-3 niveles y el
+ * máximo (nivel 10) queda como meta de largo plazo (~4000 monedas).
+ */
 export function upgradeCost(def: UpgradeDef, level: number): number {
   return Math.round((def.baseCost * Math.pow(def.growth, level)) / 5) * 5;
 }
@@ -72,15 +76,15 @@ export function upgradeCost(def: UpgradeDef, level: number): number {
 // ---------------------------------------------------------------- efectos
 
 export function fireRateMult(level: number): number {
-  return 1 + 0.08 * level;
+  return 1 + 0.06 * level;
 }
 
 export function ammoMult(level: number): number {
-  return 1 + 0.1 * level;
+  return 1 + 0.08 * level;
 }
 
 export function minionDamage(level: number): number {
-  return 1 + 0.15 * level;
+  return 1 + 0.1 * level;
 }
 
 export function gateAddBonus(level: number): number {
@@ -93,7 +97,7 @@ export function gateSubReduction(level: number): number {
 }
 
 export function gateExtraCloneChance(level: number): number {
-  return 0.04 * level;
+  return 0.03 * level;
 }
 
 /** Stats efectivos para una partida, según los niveles comprados. */
@@ -135,12 +139,12 @@ export interface CoinReward {
  * hecho (para que intentar siempre sume).
  */
 export function coinReward(levelNumber: number, won: boolean, stars: number, firstClear: boolean, damageFraction: number): CoinReward {
-  const base = 10 + levelNumber * 2;
+  const base = 5 + levelNumber;
   if (!won) {
     const consolation = Math.floor(base * 0.4 * Math.max(0, Math.min(1, damageFraction)));
     return { total: consolation, base: consolation, starBonus: 0, firstClear: 0 };
   }
-  const starBonus = Math.round(base * 0.5 * stars);
-  const first = firstClear ? 20 + levelNumber * 3 : 0;
+  const starBonus = Math.round(base * 0.35 * stars);
+  const first = firstClear ? 10 + levelNumber * 2 : 0;
   return { total: base + starBonus + first, base, starBonus, firstClear: first };
 }
