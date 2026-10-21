@@ -6,7 +6,22 @@ export const TEX = {
   minion: 'minion',
   cannonBase: 'cannon-base',
   cannonBarrel: 'cannon-barrel',
+  enemyStatic: 'enemy-static',
+  enemyPatrol: 'enemy-patrol',
+  tower: 'tower',
+  /** Blanco 4x4: barras de progreso/HP escaladas y tinteadas, sin redibujar. */
+  px: 'px',
 } as const;
+
+/** Fuente bitmap para todos los números del juego (labels, flotantes, HUD). */
+export const NUM_FONT = {
+  key: 'num',
+  chars: '0123456789+-x',
+  cellW: 34,
+  cellH: 50,
+} as const;
+
+export const TOWER_TEX = { width: LANE.right - LANE.left + 16, height: 230 } as const;
 
 /** Nombres de frames del spritesheet de minion (squash / stretch). */
 export const MINION_FRAMES = ['f0', 'f1'] as const;
@@ -36,8 +51,70 @@ export function generateTextures(scene: Phaser.Scene): void {
 
   drawCannonBarrel(g);
   g.generateTexture(TEX.cannonBarrel, 56, 96);
+  g.clear();
+
+  drawEnemyStatic(g);
+  g.generateTexture(TEX.enemyStatic, 96, 96);
+  g.clear();
+
+  drawEnemyPatrol(g);
+  g.generateTexture(TEX.enemyPatrol, 84, 72);
+  g.clear();
+
+  drawTower(g);
+  g.generateTexture(TEX.tower, TOWER_TEX.width, TOWER_TEX.height);
+  g.clear();
+
+  g.fillStyle(0xffffff, 1);
+  g.fillRect(0, 0, 4, 4);
+  g.generateTexture(TEX.px, 4, 4);
 
   g.destroy();
+
+  generateNumberFont(scene);
+}
+
+/**
+ * Rasteriza los glifos una sola vez a un canvas y lo registra como RetroFont.
+ * Un Phaser.Text re-rasteriza y re-sube su textura en cada setText; un
+ * BitmapText sólo arma quads, así que actualizar números es casi gratis.
+ * Glifos blancos con borde oscuro: el color se da con tint.
+ */
+function generateNumberFont(scene: Phaser.Scene): void {
+  const { key, chars, cellW, cellH } = NUM_FONT;
+  const canvasTex = scene.textures.createCanvas(`${key}-tex`, cellW * chars.length, cellH);
+  if (!canvasTex) throw new Error('No se pudo crear el canvas de la fuente');
+  const ctx = canvasTex.getContext();
+  ctx.font = '900 40px system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#10121c';
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < chars.length; i++) {
+    const cx = i * cellW + cellW / 2;
+    const cy = cellH / 2 + 2;
+    ctx.strokeText(chars[i], cx, cy);
+    ctx.fillText(chars[i], cx, cy);
+  }
+  canvasTex.refresh();
+
+  scene.cache.bitmapFont.add(
+    key,
+    Phaser.GameObjects.RetroFont.Parse(scene, {
+      image: `${key}-tex`,
+      width: cellW,
+      height: cellH,
+      chars,
+      charsPerRow: chars.length,
+      'offset.x': 0,
+      'offset.y': 0,
+      'spacing.x': 0,
+      'spacing.y': 0,
+      lineSpacing: 0,
+    }),
+  );
 }
 
 function drawLane(g: Phaser.GameObjects.Graphics): void {
@@ -107,4 +184,94 @@ function drawCannonBarrel(g: Phaser.GameObjects.Graphics): void {
   g.fillRoundedRect(2, 0, 52, 16, 8);
   g.fillStyle(0xffffff, 0.35);
   g.fillRoundedRect(14, 22, 8, 50, 4);
+}
+
+/** Defensor estático: bloque con púas. Textura de 96x96, centro (48,48). */
+function drawEnemyStatic(g: Phaser.GameObjects.Graphics): void {
+  const c = 48;
+  g.fillStyle(COLORS.enemyStaticShade, 1);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const a1 = a - 0.22;
+    const a2 = a + 0.22;
+    g.fillTriangle(
+      c + Math.cos(a) * 46, c + Math.sin(a) * 46,
+      c + Math.cos(a1) * 30, c + Math.sin(a1) * 30,
+      c + Math.cos(a2) * 30, c + Math.sin(a2) * 30,
+    );
+  }
+  g.fillCircle(c, c + 3, 33);
+  g.fillStyle(COLORS.enemyStatic, 1);
+  g.fillCircle(c, c, 31);
+  g.fillStyle(0xffffff, 0.25);
+  g.fillEllipse(c - 10, c - 13, 22, 12);
+  // Ceño enojado.
+  g.fillStyle(0x1a0b12, 1);
+  g.fillTriangle(c - 18, c - 6, c - 4, c - 1, c - 18, c + 2);
+  g.fillTriangle(c + 18, c - 6, c + 4, c - 1, c + 18, c + 2);
+  g.fillRoundedRect(c - 10, c + 12, 20, 6, 3);
+}
+
+/** Defensor patrullero: escarabajo. Textura de 84x72, centro (42,36). */
+function drawEnemyPatrol(g: Phaser.GameObjects.Graphics): void {
+  const cx = 42;
+  const cy = 36;
+  g.fillStyle(COLORS.enemyPatrolShade, 1);
+  g.fillRect(cx - 38, cy - 4, 76, 8);
+  g.fillRect(cx - 34, cy - 16, 68, 6);
+  g.fillRect(cx - 34, cy + 10, 68, 6);
+  g.fillEllipse(cx, cy + 3, 58, 62);
+  g.fillStyle(COLORS.enemyPatrol, 1);
+  g.fillEllipse(cx, cy, 54, 58);
+  g.fillStyle(COLORS.enemyPatrolShade, 1);
+  g.fillRect(cx - 1.5, cy - 20, 3, 46);
+  g.fillStyle(0xffffff, 0.3);
+  g.fillEllipse(cx - 11, cy - 14, 16, 10);
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(cx - 10, cy - 22, 7);
+  g.fillCircle(cx + 10, cy - 22, 7);
+  g.fillStyle(0x140a20, 1);
+  g.fillCircle(cx - 10, cy - 24, 3.5);
+  g.fillCircle(cx + 10, cy - 24, 3.5);
+}
+
+/** Torre enemiga: torreón central + muralla que cierra todo el carril. */
+function drawTower(g: Phaser.GameObjects.Graphics): void {
+  const w = TOWER_TEX.width;
+  const h = TOWER_TEX.height;
+  const cx = w / 2;
+
+  // Muralla a lo ancho (franja inferior).
+  const wallTop = h - 70;
+  g.fillStyle(COLORS.towerShade, 1);
+  g.fillRect(0, wallTop + 8, w, 62);
+  g.fillStyle(COLORS.tower, 1);
+  g.fillRect(0, wallTop, w, 56);
+  for (let x = 0; x < w; x += 44) {
+    g.fillRect(x, wallTop - 16, 26, 18);
+  }
+  g.fillStyle(COLORS.towerShade, 1);
+  for (let x = 14; x < w; x += 58) {
+    g.fillRect(x, wallTop + 18, 30, 6);
+  }
+
+  // Torreón.
+  const kw = 200;
+  const kTop = 34;
+  g.fillStyle(COLORS.towerShade, 1);
+  g.fillRect(cx - kw / 2, kTop + 10, kw, h - kTop - 10);
+  g.fillStyle(COLORS.tower, 1);
+  g.fillRect(cx - kw / 2 + 4, kTop, kw - 8, h - kTop - 14);
+  for (let i = 0; i < 5; i++) {
+    g.fillRect(cx - kw / 2 + 4 + i * 42, kTop - 20, 26, 22);
+  }
+  g.fillStyle(0xffffff, 0.12);
+  g.fillRect(cx - kw / 2 + 14, kTop + 10, 20, h - kTop - 40);
+  // Ventana y puerta.
+  g.fillStyle(0x140f24, 1);
+  g.fillRoundedRect(cx - 16, kTop + 26, 32, 40, 14);
+  g.fillRoundedRect(cx - 34, h - 84, 68, 70, { tl: 34, tr: 34, bl: 0, br: 0 });
+  g.fillStyle(COLORS.towerRoof, 1);
+  g.fillTriangle(cx + 50, 0, cx + 50, 26, cx + 86, 13);
+  g.fillRect(cx + 46, 0, 5, kTop);
 }

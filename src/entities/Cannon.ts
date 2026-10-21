@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CANNON, LANE } from '../data/tuning';
+import { CANNON, DEPTH, LANE } from '../data/tuning';
 import { clamp, damp } from '../utils/math';
 import { TEX } from '../utils/textures';
 
@@ -25,8 +25,8 @@ export class Cannon {
     this.minX = LANE.left + 40;
     this.maxX = LANE.right - 40;
 
-    this.barrel = scene.add.image(x, this.y, TEX.cannonBarrel).setOrigin(0.5, 1);
-    this.base = scene.add.image(x, this.y, TEX.cannonBase).setOrigin(0.5, 0.4);
+    this.barrel = scene.add.image(x, this.y, TEX.cannonBarrel).setOrigin(0.5, 1).setDepth(DEPTH.cannon);
+    this.base = scene.add.image(x, this.y, TEX.cannonBase).setOrigin(0.5, 0.4).setDepth(DEPTH.cannon);
     this.layout();
   }
 

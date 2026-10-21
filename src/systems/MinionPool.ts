@@ -32,6 +32,8 @@ export class MinionPool {
   readonly y: Float32Array;
   readonly vx: Float32Array;
   readonly vy: Float32Array;
+  /** Bit i encendido = este minion ya cruzó la puerta i. */
+  readonly gateMask: Uint32Array;
   private readonly phase: Float32Array;
 
   /** Índices de minions vivos, densos en [0, activeCount). */
@@ -43,6 +45,7 @@ export class MinionPool {
   private readonly free: Int32Array;
   private freeTop: number;
 
+  readonly blitter: Phaser.GameObjects.Blitter;
   private readonly bobs: Phaser.GameObjects.Bob[];
   private readonly frames: Phaser.Textures.Frame[];
   private readonly half: number;
@@ -53,6 +56,7 @@ export class MinionPool {
     this.y = new Float32Array(capacity);
     this.vx = new Float32Array(capacity);
     this.vy = new Float32Array(capacity);
+    this.gateMask = new Uint32Array(capacity);
     this.phase = new Float32Array(capacity);
     this.active = new Int32Array(capacity);
     this.slotOf = new Int32Array(capacity).fill(-1);
@@ -65,6 +69,7 @@ export class MinionPool {
 
     const blitter = new PoolBlitter(scene, 0, 0, textureKey, frameNames[0]);
     scene.add.existing(blitter);
+    this.blitter = blitter;
 
     this.bobs = new Array(capacity);
     for (let i = 0; i < capacity; i++) {
@@ -80,8 +85,16 @@ export class MinionPool {
     return this._activeCount;
   }
 
+  get isFull(): boolean {
+    return this.freeTop === 0;
+  }
+
+  isAlive(id: number): boolean {
+    return this.slotOf[id] >= 0;
+  }
+
   /** Devuelve el índice del minion, o -1 si el pool está lleno. */
-  spawn(x: number, y: number, vx: number, vy: number): number {
+  spawn(x: number, y: number, vx: number, vy: number, gateMask = 0): number {
     if (this.freeTop === 0) return -1;
     const id = this.free[--this.freeTop];
 
@@ -89,6 +102,7 @@ export class MinionPool {
     this.y[id] = y;
     this.vx[id] = vx;
     this.vy[id] = vy;
+    this.gateMask[id] = gateMask;
     this.phase[id] = Math.random() * 2;
 
     const slot = this._activeCount++;
@@ -118,7 +132,7 @@ export class MinionPool {
 
   /**
    * Integra movimiento y sincroniza los Bobs. Rebota contra los bordes del
-   * carril y libera los que salen por arriba.
+   * carril y libera los que salen por arriba (red de seguridad).
    */
   update(dt: number, minX: number, maxX: number, despawnY: number): void {
     const { x, y, vx, vy, phase, active, bobs, frames, half } = this;
