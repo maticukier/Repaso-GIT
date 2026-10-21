@@ -1,3 +1,6 @@
+import { Preferences } from '@capacitor/preferences';
+import { isNative } from './Platform';
+
 /**
  * Almacenamiento clave/valor persistente. Es asíncrono a propósito: así se
  * puede cambiar localStorage por Capacitor Preferences (async) sin tocar a
@@ -58,8 +61,28 @@ export class MemoryStorage implements Storage {
   }
 }
 
-/** localStorage si está disponible y funciona; si no, memoria. */
+/**
+ * Capacitor Preferences (SharedPreferences en Android). A diferencia de
+ * localStorage del WebView, el sistema no lo borra al liberar espacio y entra
+ * en el backup automático de Android.
+ */
+export class CapacitorPreferencesStorage implements Storage {
+  async get(key: string): Promise<string | null> {
+    return (await Preferences.get({ key })).value;
+  }
+
+  async set(key: string, value: string): Promise<void> {
+    await Preferences.set({ key, value });
+  }
+
+  async remove(key: string): Promise<void> {
+    await Preferences.remove({ key });
+  }
+}
+
+/** En la app: Preferences. En el navegador: localStorage si funciona; si no, memoria. */
 export function createDefaultStorage(): Storage {
+  if (isNative) return new CapacitorPreferencesStorage();
   try {
     const probe = '__probe__';
     window.localStorage.setItem(probe, '1');

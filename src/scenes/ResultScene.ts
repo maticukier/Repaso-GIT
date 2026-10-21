@@ -3,6 +3,7 @@ import { LEVELS } from '../data/levels';
 import { COLORS, GAME_HEIGHT, GAME_WIDTH } from '../data/tuning';
 import type { CoinReward } from '../data/upgrades';
 import { Button } from '../entities/Button';
+import { ads } from '../systems/Ads';
 import { progress } from '../systems/Progress';
 import { sfx } from '../systems/Sfx';
 import { NUM_FONT, PANEL_SLICE, TEX } from '../utils/textures';
@@ -141,6 +142,34 @@ export class ResultScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Oferta OPCIONAL: ver un anuncio para duplicar las monedas de este nivel.
+   * Sólo en esta pantalla (nunca durante el juego), con texto explícito, y
+   * rechazarla no tiene ninguna consecuencia.
+   */
+  private offerDouble(cx: number, y: number, amount: number, text: Phaser.GameObjects.BitmapText): void {
+    const btn = new Button(this, cx + 190, y, {
+      width: 150,
+      height: 60,
+      label: 'x2 con\nanuncio',
+      fontSize: 18,
+      color: 0xc9c0ff,
+      onClick: () => {
+        btn.disableInteractive().setAlpha(0.5);
+        void ads.showRewarded().then((ok) => {
+          if (!ok) {
+            btn.setInteractive().setAlpha(1);
+            return;
+          }
+          progress.addCoins(amount);
+          sfx.play('coin');
+          text.setText(`+${amount * 2}`);
+          btn.destroy();
+        });
+      },
+    });
+  }
+
   /** Monedas ganadas: cuenta hacia arriba + desglose. */
   private showCoins(cx: number, y: number, reward: CoinReward): void {
     const icon = this.add.image(cx - 40, y, TEX.coin).setScale(0.9);
@@ -166,6 +195,8 @@ export class ResultScene extends Phaser.Scene {
         sfx.play('coin');
       },
     });
+    if (ads.available) this.offerDouble(cx, y, reward.total, text);
+
     const parts: string[] = [];
     if (reward.starBonus > 0) parts.push(`estrellas +${reward.starBonus}`);
     if (reward.firstClear > 0) parts.push(`primera vez +${reward.firstClear}`);

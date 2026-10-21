@@ -84,7 +84,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     this.add
-      .text(cx, GAME_HEIGHT - 40, 'v0.4', { fontFamily: FONT, fontSize: '20px', color: '#6b5fa0' })
+      .text(cx, GAME_HEIGHT - 40, `v${__APP_VERSION__}`, { fontFamily: FONT, fontSize: '20px', color: '#6b5fa0' })
       .setOrigin(0.5);
   }
 }

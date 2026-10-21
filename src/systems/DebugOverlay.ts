@@ -32,7 +32,7 @@ export class DebugOverlay {
     this.root = document.createElement('div');
     this.root.style.cssText = [
       'position:fixed',
-      'top:calc(env(safe-area-inset-top, 0px) + 56px)',
+      'top:calc(var(--sat, 0px) + 56px)',
       'left:8px',
       'z-index:10',
       'font:12px/1.35 ui-monospace,Menlo,Consolas,monospace',

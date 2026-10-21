@@ -19,9 +19,23 @@
         -webkit-tap-highlight-color: transparent;
         overscroll-behavior: none;
       }
+      /*
+       * Safe areas: en la app, Capacitor (SystemBars) inyecta --safe-area-inset-*;
+       * en el navegador se usa env(). El juego nunca queda bajo un notch o la
+       * barra de navegación.
+       */
+      :root {
+        --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+        --sar: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+        --sab: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+        --sal: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+      }
       #game {
         position: fixed;
-        inset: 0;
+        top: var(--sat);
+        right: var(--sar);
+        bottom: var(--sab);
+        left: var(--sal);
       }
     </style>
   </head>

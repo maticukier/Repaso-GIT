@@ -63,6 +63,11 @@ class Sfx {
     if (this.ctx.state === 'suspended') void this.ctx.resume();
   }
 
+  /** Silencia y libera el hilo de audio (app en segundo plano). Se reanuda con unlock(). */
+  suspend(): void {
+    if (this.ctx && this.ctx.state === 'running') void this.ctx.suspend();
+  }
+
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
     if (this.master && this.ctx) this.master.gain.setValueAtTime(enabled ? 0.5 : 0, this.ctx.currentTime);

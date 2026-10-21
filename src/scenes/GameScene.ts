@@ -31,7 +31,7 @@ import { MinionPool } from '../systems/MinionPool';
 import { progress } from '../systems/Progress';
 import { SpatialGrid } from '../systems/SpatialGrid';
 import { readFlags } from '../utils/flags';
-import { randRange } from '../utils/math';
+import { clamp, randRange } from '../utils/math';
 import { MINION_FRAMES, TEX } from '../utils/textures';
 
 type State = 'playing' | 'won' | 'lost';
@@ -80,7 +80,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   init(data: GameSceneData): void {
-    this.levelIndex = Phaser.Math.Clamp(data.level ?? 0, 0, LEVELS.length - 1);
+    this.levelIndex = clamp(data.level ?? 0, 0, LEVELS.length - 1);
   }
 
   create(): void {
@@ -132,14 +132,14 @@ export class GameScene extends Phaser.Scene {
     );
     this.hud = new Hud(this);
 
-    // Volver a la selección. Los toques sobre el botón no disparan el cañón.
+    // Pausa (con opción de salir). Los toques sobre el botón no disparan el cañón.
     new Button(this, 52, 52, {
       width: 72,
       height: 72,
       label: '‹',
       fontSize: 56,
       color: COLORS.buttonAlt,
-      onClick: () => this.scene.start('LevelSelect'),
+      onClick: () => this.pauseGame(),
     }).setDepth(DEPTH.hud);
     this.add
       .text(GAME_WIDTH - 24, 52, `${lv.number}`, {
@@ -186,6 +186,14 @@ export class GameScene extends Phaser.Scene {
 
   get levelNumber(): number {
     return this.level.number;
+  }
+
+  /** Pausa la partida en curso (no hace nada si ya terminó o ya está en pausa). */
+  pauseGame(): void {
+    if (this.state !== 'playing' || !this.scene.isActive()) return;
+    this.releaseDrag();
+    this.scene.pause();
+    this.scene.launch('Pause');
   }
 
   toggleStress(): void {

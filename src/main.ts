@@ -2,8 +2,10 @@ import Phaser from 'phaser';
 import { COLORS, GAME_HEIGHT, GAME_WIDTH } from './data/tuning';
 import { BootScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
+import { PauseScene } from './scenes/PauseScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { UpgradesScene } from './scenes/UpgradesScene';
+import { setupLifecycle } from './systems/Lifecycle';
 import { progress } from './systems/Progress';
 import { sfx } from './systems/Sfx';
 import { GameScene } from './scenes/GameScene';
@@ -11,7 +13,8 @@ import { LevelSelectScene } from './scenes/LevelSelectScene';
 import { ResultScene } from './scenes/ResultScene';
 
 const game = new Phaser.Game({
-  type: Phaser.AUTO,
+  // Sólo WebGL: NineSlice no tiene renderer Canvas y el build de producción no lo incluye.
+  type: Phaser.WEBGL,
   parent: 'game',
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
@@ -35,8 +38,10 @@ const game = new Phaser.Game({
   },
   disableContextMenu: true,
   banner: false,
-  scene: [BootScene, MenuScene, LevelSelectScene, UpgradesScene, GameScene, ResultScene, SettingsScene],
+  scene: [BootScene, MenuScene, LevelSelectScene, UpgradesScene, GameScene, ResultScene, SettingsScene, PauseScene],
 });
+
+setupLifecycle(game);
 
 // El audio sólo puede arrancar tras un gesto del usuario (y iOS puede volver
 // a suspenderlo): cada toque intenta crear/reanudar el contexto.

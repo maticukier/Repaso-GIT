@@ -1,0 +1,75 @@
+# Compila el juego y el APK de Android en cada push.
+# - Siempre: APK debug instalable (artefacto "blobalanche-debug-apk").
+# - Si existen los secrets de firma: AAB de release firmado para Google Play
+#   (artefacto "blobalanche-release-aab"). Ver README > "Firma".
+name: Android
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Dependencias
+        run: npm ci
+
+      - name: Build web (typecheck + validador de niveles + Vite)
+        run: npm run build
+
+      - name: Sincronizar Capacitor
+        run: npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: APK debug
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blobalanche-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Preparar firma de release
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        if: env.KEYSTORE_BASE64 != ''
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/upload.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/keystore.properties
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: AAB de release firmado
+        if: steps.signing.outputs.enabled == 'true'
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        if: steps.signing.outputs.enabled == 'true'
+        with:
+          name: blobalanche-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
