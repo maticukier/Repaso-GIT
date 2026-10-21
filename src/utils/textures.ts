@@ -14,6 +14,9 @@ export const TEX = {
   towerBoss: 'tower-boss',
   star: 'star',
   lock: 'lock',
+  /** Partículas: frames 'dot' (10px) y 'chunk' (16px), blancas para tintear. */
+  fx: 'fx',
+  coin: 'coin',
   /** Rect redondeado blanco para NineSlice: botones y paneles de cualquier tamaño. */
   panel: 'panel',
   /** Blanco 4x4: barras de progreso/HP escaladas y tinteadas, sin redibujar. */
@@ -92,6 +95,19 @@ export function generateTextures(scene: Phaser.Scene): void {
 
   drawLock(g);
   g.generateTexture(TEX.lock, 48, 56);
+  g.clear();
+
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(5, 5, 5);
+  g.fillRoundedRect(12, 0, 16, 16, 4);
+  g.generateTexture(TEX.fx, 28, 16);
+  g.clear();
+  const fx = scene.textures.get(TEX.fx);
+  fx.add('dot', 0, 0, 0, 10, 10);
+  fx.add('chunk', 0, 12, 0, 16, 16);
+
+  drawCoin(g);
+  g.generateTexture(TEX.coin, 48, 48);
   g.clear();
 
   g.fillStyle(0xffffff, 1);
@@ -398,4 +414,17 @@ function drawLock(g: Phaser.GameObjects.Graphics): void {
   g.fillRect(10.5, 21, 7, 6);
   g.fillRect(30.5, 21, 7, 6);
   g.fillRoundedRect(4, 24, 40, 30, 7);
+}
+
+function drawCoin(g: Phaser.GameObjects.Graphics): void {
+  g.fillStyle(COLORS.coinShade, 1);
+  g.fillCircle(24, 26, 21);
+  g.fillStyle(COLORS.coin, 1);
+  g.fillCircle(24, 23, 21);
+  g.fillStyle(COLORS.coinShade, 1);
+  g.fillCircle(24, 23, 14);
+  g.fillStyle(COLORS.coin, 1);
+  g.fillCircle(24, 23, 11);
+  g.fillStyle(0xffffff, 0.55);
+  g.fillEllipse(17, 15, 10, 6);
 }

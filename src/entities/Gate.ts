@@ -6,6 +6,24 @@ import type { HordeContext } from '../systems/HordeContext';
 import { clamp, randRange } from '../utils/math';
 import { NUM_FONT, TEX } from '../utils/textures';
 
+/** Bonus de la mejora "puertas potenciadas". */
+export interface GateBonus {
+  /** Se suma a las puertas de suma. */
+  add: number;
+  /** Se descuenta (en módulo) de las puertas de resta. */
+  sub: number;
+  /** Probabilidad de un clon extra en multiplicadores. */
+  extraCloneChance: number;
+}
+
+export const NO_GATE_BONUS: GateBonus = { add: 0, sub: 0, extraCloneChance: 0 };
+
+/** Valor efectivo con el bonus aplicado (una resta nunca llega a 0 ni pasa a sumar). */
+export function boostedValue(v: GateValue, bonus: GateBonus): GateValue {
+  if (v.op !== 'add') return v;
+  return { op: 'add', n: v.n > 0 ? v.n + bonus.add : Math.min(-1, v.n + bonus.sub) };
+}
+
 export function gateLabel(v: GateValue): string {
   if (v.op === 'mul') return `x${v.n}`;
   return v.n >= 0 ? `+${v.n}` : `${v.n}`;
@@ -80,6 +98,7 @@ export class Gate {
     def: GateDef,
     index: number,
     private readonly floating: FloatingTextPool,
+    private readonly bonus: GateBonus = NO_GATE_BONUS,
   ) {
     if (index > 31) throw new Error('Máximo 32 puertas (máscara de 32 bits)');
     this.bit = 1 << index;
@@ -174,14 +193,17 @@ export class Gate {
 
   private apply(ctx: HordeContext, id: number, mx: number, left: number, right: number, top: number): void {
     const { pool } = ctx;
-    const v = this.value;
+    const v = boostedValue(this.value, this.bonus);
 
     if (v.op === 'add' && v.n < 0) {
+      ctx.fx.gateCrossed(mx, this.y, false, COLORS.gateNeg);
       this.pendingDelta -= this.killAround(ctx, id, -v.n);
       return;
     }
 
-    const clones = v.op === 'mul' ? v.n - 1 : v.n;
+    ctx.fx.gateCrossed(mx, this.y, true, gateColor(v));
+    let clones = v.op === 'mul' ? v.n - 1 : v.n;
+    if (v.op === 'mul' && Math.random() < this.bonus.extraCloneChance) clones++;
     const mask = pool.gateMask[id];
     const vy = pool.vy[id];
     // Los clones nacen sobre la puerta, abiertos en abanico.
@@ -239,7 +261,7 @@ export class Gate {
     const v = this.value;
     this.body.setTexture(gateTextureKey(this.width, gateColor(v)));
 
-    this.label.setText(gateLabel(v));
+    this.label.setText(gateLabel(boostedValue(v, this.bonus)));
     if (this.progressFill) {
       const visible = this.hasNext;
       this.progressFill.setVisible(visible);

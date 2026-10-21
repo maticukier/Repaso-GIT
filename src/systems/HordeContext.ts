@@ -1,3 +1,4 @@
+import type { Feedback } from './Feedback';
 import type { MinionPool } from './MinionPool';
 import type { SpatialGrid } from './SpatialGrid';
 
@@ -13,4 +14,7 @@ export interface HordeContext {
   scratchB: Int32Array;
   /** En el test de estrés torre y enemigos no reciben daño. */
   invulnerable: boolean;
+  /** Daño de cada minion (mejora "daño por minion"). */
+  damage: number;
+  fx: Feedback;
 }

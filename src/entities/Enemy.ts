@@ -8,11 +8,11 @@ const HIT_FLASH = 0.06;
 const HP_BAR_W = 64;
 
 /** Textura y diámetro del cuerpo dentro de ella (púas/patas quedan afuera del radio). */
-const LOOK: Record<EnemyKind, { tex: string; body: number }> = {
-  static: { tex: TEX.enemyStatic, body: 72 },
-  patrol: { tex: TEX.enemyPatrol, body: 62 },
-  brute: { tex: TEX.enemyBrute, body: 100 },
-  orbiter: { tex: TEX.enemyOrbiter, body: 60 },
+const LOOK: Record<EnemyKind, { tex: string; body: number; color: number }> = {
+  static: { tex: TEX.enemyStatic, body: 72, color: COLORS.enemyStatic },
+  patrol: { tex: TEX.enemyPatrol, body: 62, color: COLORS.enemyPatrol },
+  brute: { tex: TEX.enemyBrute, body: 100, color: COLORS.enemyBrute },
+  orbiter: { tex: TEX.enemyOrbiter, body: 60, color: COLORS.enemyOrbiter },
 };
 
 /** Defensor: elimina minions al contacto (círculo vs. punto con radio). */
@@ -105,14 +105,21 @@ export class Enemy {
       if (dx * dx + dy * dy > reach2) continue;
       pool.release(id);
       hits++;
-      if (!ctx.invulnerable && hits >= Math.ceil(this.hp)) break;
+      // Con más daño por minion hacen falta menos contactos para matarlo.
+      if (!ctx.invulnerable && hits * ctx.damage >= this.hp) break;
     }
 
     if (hits === 0) return;
-    if (!ctx.invulnerable) this.hp = Math.max(0, this.hp - hits);
+    if (!ctx.invulnerable) this.hp = Math.max(0, this.hp - hits * ctx.damage);
     this.flash = HIT_FLASH;
     this.sprite.setTintFill(0xffffff);
-    if (!this.alive) this.die();
+    const color = LOOK[this.def.kind].color;
+    if (this.alive) {
+      ctx.fx.enemyHit(this.x, this.y, color, hits);
+    } else {
+      ctx.fx.enemyKilled(this.x, this.y, color, this.radius);
+      this.die();
+    }
   }
 
   private placeOnOrbit(): void {

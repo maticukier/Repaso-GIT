@@ -15,7 +15,7 @@
 
 ---
 
-# Blob Brigade (prototipo hyper-casual)
+# Blobalanche (prototipo hyper-casual)
 
 Phaser 3 + TypeScript + Vite. Portrait 9:16, touch-first.
 
@@ -33,11 +33,17 @@ npm run build      # typecheck + validador + build de producción en dist/
 - La barra amarilla es el cargador: se recarga solo desde la reserva (el número). Ganás al destruir la torre;
   perdés si te quedás sin munición y sin minions vivos.
 - 30 niveles en `src/data/levels/level-NN.json` (jefes en 10, 20 y 30). Se desbloquean ganando;
-  las estrellas dependen de la munición que sobra. El progreso vive en memoria durante la sesión.
+  las estrellas dependen de la munición que sobra.
+- Monedas por nivel (base según nivel + bonus por estrellas + bonus de primera vez; al perder,
+  algo proporcional al daño hecho). Se gastan en 4 mejoras permanentes (cadencia, munición,
+  daño por minion, puertas potenciadas) con costo creciente x1.5 por nivel (máx. 10).
+- Progreso, monedas, mejoras y ajustes se guardan en `localStorage` detrás de la interfaz
+  `Storage` (`src/systems/Storage.ts`), lista para cambiarse por otro backend.
+- Ajustes: sonido (WebAudio sintetizado, sin archivos) y vibración (`navigator.vibrate` detrás
+  de la interfaz `Haptics`).
 - `?level=N` entra directo al nivel N (para pruebas).
-- Panel de debug arriba a la izquierda: FPS, peor frame y minions activos / capacidad del pool.
+- Panel de debug (por defecto sólo en `npm run dev`; `?debug=1` / `?debug=0` lo fuerza) arriba a la izquierda: FPS, peor frame y minions activos / capacidad del pool.
 - Test de estrés: botón del panel, o `?stress` en la URL (`?stress=600`, `?stress=1000`, máx. 1024).
-- `?debug=0` oculta el panel.
 
 ## Formato de nivel
 

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { sfx } from '../systems/Sfx';
 import { PANEL_SLICE, TEX } from '../utils/textures';
 
 export interface ButtonOptions {
@@ -19,6 +20,7 @@ const FONT = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
  */
 export class Button extends Phaser.GameObjects.Container {
   private readonly bg: Phaser.GameObjects.NineSlice;
+  private readonly text: Phaser.GameObjects.Text;
   private pressed = false;
 
   constructor(scene: Phaser.Scene, x: number, y: number, opts: ButtonOptions) {
@@ -30,14 +32,15 @@ export class Button extends Phaser.GameObjects.Container {
     this.bg = scene.add
       .nineslice(0, 0, TEX.panel, undefined, width, height, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE)
       .setTint(opts.color);
-    const text = scene.add
+    const text = (this.text = scene.add
       .text(0, 0, opts.label, {
         fontFamily: FONT,
         fontSize: `${opts.fontSize ?? 32}px`,
         fontStyle: '900',
         color: '#10121c',
+        align: 'center',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5));
     this.add([shadow, this.bg, text]);
     this.setSize(width, height);
     scene.add.existing(this);
@@ -59,7 +62,18 @@ export class Button extends Phaser.GameObjects.Container {
       if (!this.pressed) return;
       this.pressed = false;
       this.bg.y = 0;
+      sfx.play('click');
       opts.onClick();
     });
+  }
+
+  setLabel(label: string): this {
+    this.text.setText(label);
+    return this;
+  }
+
+  setColor(color: number): this {
+    this.bg.setTint(color);
+    return this;
   }
 }

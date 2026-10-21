@@ -14,6 +14,7 @@ export class Tower {
   hp: number;
   readonly maxHp: number;
   readonly lineY: number;
+  private readonly height: number;
   private shake = 0;
 
   private readonly sprite: Phaser.GameObjects.Image;
@@ -25,6 +26,7 @@ export class Tower {
     this.hp = hp;
     this.maxHp = hp;
     this.lineY = lineY;
+    this.height = (boss ? BOSS_TOWER_TEX : TOWER_TEX).height;
 
     this.sprite = scene.add
       .image(GAME_WIDTH / 2, lineY + 10, boss ? TEX.towerBoss : TEX.tower)
@@ -32,7 +34,7 @@ export class Tower {
       .setDepth(DEPTH.tower);
 
     const bx = GAME_WIDTH / 2 - BAR_W / 2;
-    const by = lineY - (boss ? BOSS_TOWER_TEX : TOWER_TEX).height + 4;
+    const by = lineY - this.height + 4;
     scene.add.image(bx - 4, by, TEX.px).setOrigin(0, 0.5).setDisplaySize(BAR_W + 8, BAR_H + 8).setTint(0x10121c).setDepth(DEPTH.hud);
     scene.add.image(bx, by, TEX.px).setOrigin(0, 0.5).setDisplaySize(BAR_W, BAR_H).setTint(COLORS.hpBarBg).setDepth(DEPTH.hud);
     this.barFill = scene.add.image(bx, by, TEX.px).setOrigin(0, 0.5).setTint(COLORS.hpBar).setDepth(DEPTH.hud);
@@ -58,9 +60,11 @@ export class Tower {
       pool.release(id);
       hits++;
     }
-    if (hits === 0) return;
-    if (!ctx.invulnerable) this.hp = Math.max(0, this.hp - hits);
+    if (hits === 0 || this.destroyed) return;
+    if (!ctx.invulnerable) this.hp = Math.max(0, this.hp - hits * ctx.damage);
     this.shake = 0.08;
+    if (this.destroyed) ctx.fx.towerDestroyed(this.lineY, this.height);
+    else ctx.fx.towerHit(this.lineY, hits);
   }
 
   update(dt: number): void {
@@ -72,10 +76,12 @@ export class Tower {
   }
 
   private syncBar(): void {
-    if (this.hp === this.shownHp) return;
-    this.shownHp = this.hp;
+    // Con daño fraccional el HP no es entero: se muestra redondeado hacia arriba.
+    const shown = Math.ceil(this.hp);
+    if (shown === this.shownHp) return;
+    this.shownHp = shown;
     this.barFill.setDisplaySize(Math.max(0.01, (BAR_W * this.hp) / this.maxHp), BAR_H);
-    this.hpText.setText(`${this.hp}`);
+    this.hpText.setText(`${shown}`);
     if (this.hp <= 0) this.sprite.setAlpha(0.35);
   }
 }

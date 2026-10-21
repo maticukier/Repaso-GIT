@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 
 export interface DebugStats {
   activeMinions: number;
+  particles: number;
   poolCapacity: number;
   stress: boolean;
   stressTarget: number;
@@ -75,7 +76,8 @@ export class DebugOverlay {
     this.text.textContent =
       `FPS      ${fps.toFixed(0).padStart(4)}  (loop ${this.game.loop.actualFps.toFixed(0)})\n` +
       `peor ms  ${this.worstMs.toFixed(1).padStart(4)}\n` +
-      `minions  ${String(stats.activeMinions).padStart(4)} / ${stats.poolCapacity}`;
+      `minions  ${String(stats.activeMinions).padStart(4)} / ${stats.poolCapacity}\n` +
+      `partíc.  ${String(stats.particles).padStart(4)}`;
     this.button.textContent = stats.stress ? `Estrés ON (${stats.stressTarget}) — apagar` : `Test estrés ${stats.stressTarget}`;
     this.button.style.background = stats.stress ? '#ff7a59' : '#4fe3c1';
 

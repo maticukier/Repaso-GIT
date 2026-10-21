@@ -1,14 +1,16 @@
 import Phaser from 'phaser';
 import { LEVELS } from '../data/levels';
-import { COLORS, GAME_WIDTH } from '../data/tuning';
+import { COLORS, GAME_HEIGHT, GAME_WIDTH } from '../data/tuning';
+import { Button } from '../entities/Button';
+import { CoinCounter } from '../entities/CoinCounter';
 import { progress } from '../systems/Progress';
 import { NUM_FONT, PANEL_SLICE, TEX } from '../utils/textures';
 
 const COLS = 5;
 const TILE = 108;
 const GAP_X = 128;
-const GAP_Y = 160;
-const TOP = 300;
+const GAP_Y = 152;
+const TOP = 290;
 const FONT = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
 
 /** Grilla de niveles: bloqueados con candado, jefes en rojo, estrellas ganadas. */
@@ -20,10 +22,19 @@ export class LevelSelectScene extends Phaser.Scene {
   create(): void {
     this.add.image(0, 0, TEX.lane).setOrigin(0, 0).setAlpha(0.35);
 
+    new Button(this, 52, 56, {
+      width: 72,
+      height: 72,
+      label: '‹',
+      fontSize: 56,
+      color: COLORS.buttonAlt,
+      onClick: () => this.scene.start('Menu'),
+    });
+    new CoinCounter(this, GAME_WIDTH - 28, 56);
     this.add
-      .text(GAME_WIDTH / 2, 110, 'Blob Brigade', {
+      .text(GAME_WIDTH / 2, 130, 'Niveles', {
         fontFamily: FONT,
-        fontSize: '64px',
+        fontSize: '60px',
         fontStyle: '900',
         color: '#4fe3c1',
         stroke: '#10121c',
@@ -43,6 +54,15 @@ export class LevelSelectScene extends Phaser.Scene {
         strokeThickness: 6,
       })
       .setOrigin(0, 0.5);
+
+    new Button(this, GAME_WIDTH / 2, GAME_HEIGHT - 70, {
+      width: 360,
+      height: 84,
+      label: 'Mejoras',
+      fontSize: 34,
+      color: COLORS.coin,
+      onClick: () => this.scene.start('Upgrades', { back: 'LevelSelect' }),
+    });
 
     const x0 = GAME_WIDTH / 2 - ((COLS - 1) * GAP_X) / 2;
     LEVELS.forEach((level, i) => {

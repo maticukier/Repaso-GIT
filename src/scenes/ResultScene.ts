@@ -1,15 +1,20 @@
 import Phaser from 'phaser';
 import { LEVELS } from '../data/levels';
 import { COLORS, GAME_HEIGHT, GAME_WIDTH } from '../data/tuning';
+import type { CoinReward } from '../data/upgrades';
 import { Button } from '../entities/Button';
 import { progress } from '../systems/Progress';
-import { PANEL_SLICE, TEX } from '../utils/textures';
+import { sfx } from '../systems/Sfx';
+import { NUM_FONT, PANEL_SLICE, TEX } from '../utils/textures';
 
 export interface ResultData {
   level: number;
   won: boolean;
   stars: number;
+  reward: CoinReward;
 }
+
+const PANEL_H = 760;
 
 const FONT = 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif';
 
@@ -20,9 +25,9 @@ export class ResultScene extends Phaser.Scene {
   }
 
   create(data: ResultData): void {
-    const { level, won, stars } = data;
+    const { level, won, stars, reward } = data;
     const cx = GAME_WIDTH / 2;
-    const cy = GAME_HEIGHT / 2;
+    const cy = GAME_HEIGHT / 2 - 20;
     const def = LEVELS[level];
     const hasNext = level + 1 < LEVELS.length;
     const nextUnlocked = hasNext && progress.isUnlocked(level + 1);
@@ -31,14 +36,14 @@ export class ResultScene extends Phaser.Scene {
     this.add.rectangle(cx, cy, GAME_WIDTH, GAME_HEIGHT, 0x0b0816, 0.6).setInteractive();
 
     this.add
-      .nineslice(cx, cy + 6, TEX.panel, undefined, 560, 620, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE)
+      .nineslice(cx, cy + 46, TEX.panel, undefined, 560, PANEL_H, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE)
       .setTint(0x10121c);
     this.add
-      .nineslice(cx, cy, TEX.panel, undefined, 560, 620, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE)
+      .nineslice(cx, cy + 40, TEX.panel, undefined, 560, PANEL_H, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE, PANEL_SLICE)
       .setTint(0x2a1f4a);
 
     this.add
-      .text(cx, cy - 250, `Nivel ${level + 1} · ${def.name}`, {
+      .text(cx, cy - 300, `Nivel ${level + 1} · ${def.name}`, {
         fontFamily: FONT,
         fontSize: '28px',
         fontStyle: '700',
@@ -46,7 +51,7 @@ export class ResultScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(cx, cy - 190, won ? '¡Torre destruida!' : 'Sin munición', {
+      .text(cx, cy - 240, won ? '¡Torre destruida!' : 'Sin munición', {
         fontFamily: FONT,
         fontSize: '54px',
         fontStyle: '900',
@@ -59,7 +64,7 @@ export class ResultScene extends Phaser.Scene {
     if (won) {
       for (let s = 0; s < 3; s++) {
         const star = this.add
-          .image(cx + (s - 1) * 110, cy - 70 + (s === 1 ? -16 : 0), TEX.star)
+          .image(cx + (s - 1) * 110, cy - 130 + (s === 1 ? -16 : 0), TEX.star)
           .setScale(s === 1 ? 1.7 : 1.4)
           .setTint(s < stars ? COLORS.star : COLORS.starEmpty);
         if (s < stars) {
@@ -71,7 +76,7 @@ export class ResultScene extends Phaser.Scene {
       }
     } else {
       this.add
-        .text(cx, cy - 80, 'Probá otra puerta o\nrepartí mejor la munición', {
+        .text(cx, cy - 130, 'Probá otra puerta o\nmejorá tu cañón', {
           fontFamily: FONT,
           fontSize: '28px',
           fontStyle: '700',
@@ -81,8 +86,10 @@ export class ResultScene extends Phaser.Scene {
         .setOrigin(0.5);
     }
 
+    this.showCoins(cx, cy - 30, reward);
+
     const primaryIsNext = won && hasNext;
-    new Button(this, cx, cy + 60, {
+    new Button(this, cx, cy + 90, {
       width: 400,
       height: 92,
       label: primaryIsNext ? 'Siguiente' : 'Reintentar',
@@ -90,7 +97,7 @@ export class ResultScene extends Phaser.Scene {
       onClick: () => this.scene.start('Game', { level: primaryIsNext ? level + 1 : level }),
     });
     if (primaryIsNext) {
-      new Button(this, cx, cy + 172, {
+      new Button(this, cx, cy + 195, {
         width: 400,
         height: 80,
         label: 'Reintentar',
@@ -100,7 +107,7 @@ export class ResultScene extends Phaser.Scene {
       });
     } else {
       // Al perder, "Siguiente" sólo si ya estaba desbloqueado (rejugando).
-      new Button(this, cx, cy + 172, {
+      new Button(this, cx, cy + 195, {
         width: 400,
         height: 80,
         label: 'Siguiente',
@@ -110,8 +117,8 @@ export class ResultScene extends Phaser.Scene {
         onClick: () => this.scene.start('Game', { level: level + 1 }),
       });
     }
-    new Button(this, cx, cy + 268, {
-      width: 400,
+    new Button(this, cx - 102, cy + 300, {
+      width: 196,
       height: 72,
       label: 'Niveles',
       color: 0xc9c0ff,
@@ -121,5 +128,51 @@ export class ResultScene extends Phaser.Scene {
         this.scene.start('LevelSelect');
       },
     });
+    new Button(this, cx + 102, cy + 300, {
+      width: 196,
+      height: 72,
+      label: 'Mejoras',
+      color: COLORS.coin,
+      fontSize: 26,
+      onClick: () => {
+        this.scene.stop('Game');
+        this.scene.start('Upgrades', { back: 'LevelSelect' });
+      },
+    });
+  }
+
+  /** Monedas ganadas: cuenta hacia arriba + desglose. */
+  private showCoins(cx: number, y: number, reward: CoinReward): void {
+    const icon = this.add.image(cx - 40, y, TEX.coin).setScale(0.9);
+    const text = this.add.bitmapText(cx - 10, y + 2, NUM_FONT.key, '+0', 46).setOrigin(0, 0.5).setLetterSpacing(-8).setTint(COLORS.coin);
+    if (reward.total <= 0) {
+      icon.setAlpha(0.4);
+      text.setAlpha(0.4);
+      return;
+    }
+    const counter = { v: 0 };
+    let shown = 0;
+    this.tweens.add({
+      targets: counter,
+      v: reward.total,
+      duration: Math.min(900, 300 + reward.total * 6),
+      delay: 400,
+      ease: 'Cubic.Out',
+      onUpdate: () => {
+        const n = Math.round(counter.v);
+        if (n === shown) return;
+        shown = n;
+        text.setText(`+${n}`);
+        sfx.play('coin');
+      },
+    });
+    const parts: string[] = [];
+    if (reward.starBonus > 0) parts.push(`estrellas +${reward.starBonus}`);
+    if (reward.firstClear > 0) parts.push(`primera vez +${reward.firstClear}`);
+    if (parts.length > 0) {
+      this.add
+        .text(cx, y + 40, parts.join('  ·  '), { fontFamily: FONT, fontSize: '20px', fontStyle: '700', color: '#c9c0ff' })
+        .setOrigin(0.5);
+    }
   }
 }

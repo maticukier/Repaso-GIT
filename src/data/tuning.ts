@@ -40,6 +40,9 @@ export const COLORS = {
   buttonAlt: 0x8f7cff,
   boss: 0xff4d6d,
   bossLocked: 0x5a2440,
+  coin: 0xffd166,
+  coinShade: 0xc98a1c,
+  sparkTower: 0xb8a8e8,
   hpBar: 0xff4d6d,
   hpBarBg: 0x241b3d,
   ammoBar: 0xffd166,
@@ -127,6 +130,14 @@ export const STRESS = {
   /** Más lentos que lo normal para que la horda llene toda la pantalla. */
   speedMin: 220,
   speedMax: 420,
+} as const;
+
+export const FX = {
+  particleCapacity: 700,
+  /** Cada cuánto como mucho se emiten esquirlas por golpes a la torre (s). */
+  towerChipInterval: 0.08,
+  /** Temblor leve por golpes a la torre: como mucho cada tanto (s). */
+  towerShakeInterval: 0.25,
 } as const;
 
 /** Paso máximo de simulación, evita "teleports" tras un tab en background. */

@@ -20,7 +20,9 @@ import {
   POOL,
   STRESS,
 } from '../data/tuning';
+import { BASE_LOADOUT, coinReward, loadoutFor, type Loadout } from '../data/upgrades';
 import { Ammo } from '../systems/Ammo';
+import { Feedback } from '../systems/Feedback';
 import { DebugOverlay } from '../systems/DebugOverlay';
 import { FloatingTextPool } from '../systems/FloatingTextPool';
 import type { HordeContext } from '../systems/HordeContext';
@@ -60,6 +62,9 @@ export class GameScene extends Phaser.Scene {
   private lastPointerX = 0;
   private fireAcc = 0;
 
+  private loadout: Loadout = BASE_LOADOUT;
+  private fireInterval = 1 / CANNON.fireRate;
+  private fx!: Feedback;
   private levelIndex = 0;
   private level!: LevelDef;
   private state: State = 'playing';
@@ -93,21 +98,38 @@ export class GameScene extends Phaser.Scene {
     this.pool = new MinionPool(this, TEX.minion, MINION_FRAMES, POOL.capacity);
     this.pool.blitter.setDepth(DEPTH.minions);
     this.grid = new SpatialGrid(GAME_WIDTH, GAME_HEIGHT, GRID.cellSize, POOL.capacity);
+    // Las mejoras no aplican al test de estrés: mide rendimiento, no balance.
+    this.loadout = this.stress ? BASE_LOADOUT : loadoutFor(progress.upgradeLevels());
+    this.fireInterval = 1 / (CANNON.fireRate * this.loadout.fireRateMult);
+    this.fx = new Feedback(this);
     this.ctx = {
       pool: this.pool,
       grid: this.grid,
       scratchA: new Int32Array(POOL.capacity),
       scratchB: new Int32Array(POOL.capacity),
       invulnerable: this.stress,
+      damage: this.loadout.damage,
+      fx: this.fx,
     };
 
     const lv = this.level;
     this.tower = new Tower(this, lv.tower.hp, lv.tower.lineY, lv.boss);
-    this.gates = lv.gates.map((def, i) => new Gate(this, def, i, this.floating));
+    const gateBonus = {
+      add: this.loadout.gateAddBonus,
+      sub: this.loadout.gateSubReduction,
+      extraCloneChance: this.loadout.gateExtraCloneChance,
+    };
+    this.gates = lv.gates.map((def, i) => new Gate(this, def, i, this.floating, gateBonus));
     this.enemies = lv.enemies.map((def) => new Enemy(this, def));
 
     this.cannon = new Cannon(this, GAME_WIDTH / 2);
-    this.ammo = new Ammo(lv.ammo.magazine, lv.ammo.total, lv.ammo.regenPerSec, this.stress);
+    const am = this.loadout.ammoMult;
+    this.ammo = new Ammo(
+      Math.round(lv.ammo.magazine * am),
+      Math.round(lv.ammo.total * am),
+      lv.ammo.regenPerSec * this.loadout.fireRateMult,
+      this.stress,
+    );
     this.hud = new Hud(this);
 
     // Volver a la selección. Los toques sobre el botón no disparan el cañón.
@@ -182,7 +204,7 @@ export class GameScene extends Phaser.Scene {
     this.cannon.update(dt);
     if (!this.stress) this.ammo.update(dt);
 
-    const interval = 1 / CANNON.fireRate;
+    const interval = this.fireInterval;
     if (this.isFiring) {
       this.fireAcc += dt;
       while (this.fireAcc >= interval) {
@@ -210,11 +232,13 @@ export class GameScene extends Phaser.Scene {
 
     this.tower.update(dt);
     this.floating.update(dt);
+    this.fx.update(dt);
     this.hud.update(this.ammo);
     this.checkEnd();
 
     this.debug?.update(deltaMs, {
       activeMinions: this.pool.activeCount,
+      particles: this.fx.particles.count,
       poolCapacity: this.pool.capacity,
       stress: this.stress,
       stressTarget: this.stressTarget,
@@ -232,13 +256,19 @@ export class GameScene extends Phaser.Scene {
     this.releaseDrag();
 
     const won = state === 'won';
+    const firstClear = won && !progress.isCleared(this.levelIndex);
     let stars = 0;
     if (won) {
-      stars = starsFor(this.level, this.ammo.remaining / this.level.ammo.total);
+      // Fracción sobre la munición efectiva (con mejoras): más munición, más fácil 3 estrellas.
+      stars = starsFor(this.level, this.ammo.remaining / Math.round(this.level.ammo.total * this.loadout.ammoMult));
       progress.recordWin(this.levelIndex, stars, LEVELS.length);
     }
+    const damageFraction = 1 - this.tower.hp / this.tower.maxHp;
+    const reward = coinReward(this.level.number, won, stars, firstClear, damageFraction);
+    progress.addCoins(reward.total);
+    this.fx.result(won);
     this.time.delayedCall(RESULT_DELAY_MS, () => {
-      this.scene.launch('Result', { level: this.levelIndex, won, stars });
+      this.scene.launch('Result', { level: this.levelIndex, won, stars, reward });
     });
   }
 
@@ -249,7 +279,10 @@ export class GameScene extends Phaser.Scene {
       randRange(-MINION.spreadVx, MINION.spreadVx),
       -randRange(MINION.speedMin, MINION.speedMax),
     );
-    if (id !== -1) this.cannon.kick();
+    if (id !== -1) {
+      this.cannon.kick();
+      this.fx.shot();
+    }
   }
 
   /** Mantiene la horda en al menos `stressTarget` minions vivos a la vez. */
@@ -275,7 +308,7 @@ export class GameScene extends Phaser.Scene {
     this.dragPointerId = pointer.id;
     this.lastPointerX = pointer.x;
     // Primer minion inmediato al tocar: se siente más responsivo.
-    this.fireAcc = 1 / CANNON.fireRate;
+    this.fireAcc = this.fireInterval;
   }
 
   private onPointerMove(pointer: Phaser.Input.Pointer): void {
