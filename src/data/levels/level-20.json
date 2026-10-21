@@ -2,7 +2,7 @@
   "name": "Fortaleza giratoria",
   "boss": true,
   "tower": {
-    "hp": 1
+    "hp": 615
   },
   "ammo": {
     "total": 260

@@ -2,7 +2,7 @@
   "name": "El Trono",
   "boss": true,
   "tower": {
-    "hp": 1
+    "hp": 975
   },
   "ammo": {
     "total": 320

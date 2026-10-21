@@ -1,7 +1,7 @@
 {
   "name": "Carril rápido",
   "tower": {
-    "hp": 1
+    "hp": 285
   },
   "ammo": {
     "total": 210

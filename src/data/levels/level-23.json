@@ -1,7 +1,7 @@
 {
   "name": "Trampa dulce",
   "tower": {
-    "hp": 1
+    "hp": 140
   },
   "ammo": {
     "total": 250

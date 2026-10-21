@@ -1,7 +1,7 @@
 {
   "name": "Suma y sigue",
   "tower": {
-    "hp": 1
+    "hp": 345
   },
   "ammo": {
     "total": 70

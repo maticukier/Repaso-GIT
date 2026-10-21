@@ -1,7 +1,7 @@
 {
   "name": "En movimiento",
   "tower": {
-    "hp": 1
+    "hp": 215
   },
   "ammo": {
     "total": 100

@@ -1,7 +1,7 @@
 {
   "name": "Ojo con el rojo",
   "tower": {
-    "hp": 1
+    "hp": 75
   },
   "ammo": {
     "total": 80

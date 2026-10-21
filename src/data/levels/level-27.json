@@ -1,7 +1,7 @@
 {
   "name": "Laberinto",
   "tower": {
-    "hp": 1
+    "hp": 2280
   },
   "ammo": {
     "total": 270
@@ -22,36 +22,22 @@
       "value": -5
     },
     {
-      "x": 520,
-      "y": 760,
-      "width": 180,
-      "type": "mul",
-      "value": 2
-    },
-    {
-      "x": 200,
-      "y": 760,
-      "width": 180,
-      "type": "add",
-      "value": -5
-    },
-    {
-      "x": 200,
-      "y": 620,
-      "width": 180,
+      "x": 260,
+      "y": 720,
+      "width": 160,
       "type": "mul",
       "value": 3
     },
     {
-      "x": 520,
-      "y": 620,
-      "width": 180,
+      "x": 545,
+      "y": 720,
+      "width": 140,
       "type": "add",
       "value": -5
     },
     {
       "x": 360,
-      "y": 440,
+      "y": 540,
       "width": 200,
       "type": "add",
       "value": -5,
@@ -73,23 +59,9 @@
   ],
   "enemies": [
     {
-      "type": "static",
-      "x": 360,
-      "y": 830,
-      "radius": 30,
-      "hp": 50
-    },
-    {
-      "type": "static",
-      "x": 360,
-      "y": 690,
-      "radius": 30,
-      "hp": 50
-    },
-    {
       "type": "patrol",
       "x": 135,
-      "y": 380,
+      "y": 640,
       "radius": 30,
       "hp": 55,
       "patrol": {
@@ -97,6 +69,20 @@
         "maxX": 585,
         "speed": 200
       }
+    },
+    {
+      "type": "static",
+      "x": 200,
+      "y": 420,
+      "radius": 30,
+      "hp": 50
+    },
+    {
+      "type": "static",
+      "x": 520,
+      "y": 420,
+      "radius": 30,
+      "hp": 50
     }
   ]
 }

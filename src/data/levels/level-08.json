@@ -1,7 +1,7 @@
 {
   "name": "Insistí",
   "tower": {
-    "hp": 1
+    "hp": 240
   },
   "ammo": {
     "total": 120

@@ -1,7 +1,7 @@
 {
   "name": "Ruleta",
   "tower": {
-    "hp": 1
+    "hp": 455
   },
   "ammo": {
     "total": 260

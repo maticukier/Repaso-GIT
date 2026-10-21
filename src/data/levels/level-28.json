@@ -1,7 +1,7 @@
 {
   "name": "Tormenta",
   "tower": {
-    "hp": 1
+    "hp": 520
   },
   "ammo": {
     "total": 270

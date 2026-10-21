@@ -1,7 +1,7 @@
 {
   "name": "Muralla",
   "tower": {
-    "hp": 1
+    "hp": 485
   },
   "ammo": {
     "total": 220

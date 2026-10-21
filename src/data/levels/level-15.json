@@ -1,7 +1,7 @@
 {
   "name": "Taller",
   "tower": {
-    "hp": 1
+    "hp": 405
   },
   "ammo": {
     "total": 200

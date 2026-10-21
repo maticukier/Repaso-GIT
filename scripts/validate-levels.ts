@@ -18,8 +18,13 @@ import { bestStrategy, maxDamage } from './levelSim';
 
 /** El modelo es optimista: por debajo de este margen el nivel real puede quedar injusto. */
 const MIN_MARGIN = 1.25;
-/** Un nivel no debería ser más de esto "más difícil" que el anterior (dificultad = 1/margen). */
-const MAX_DIFFICULTY_JUMP = 1.18;
+/**
+ * Un nivel no debería ser más de esto "más difícil" que el anterior
+ * (dificultad = 1/margen). Contra partidas reales con bots, el modelo erra
+ * hasta ~15% por nivel, así que dos vecinos pueden diferir ~1.3 sólo por el
+ * modelo; por encima de eso es un pico real.
+ */
+const MAX_DIFFICULTY_JUMP = 1.3;
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), '../src/data/levels');
 const files = readdirSync(dir)

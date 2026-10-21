@@ -1,7 +1,7 @@
 {
-  "name": "Zigzag",
+  "name": "Elegí el camino",
   "tower": {
-    "hp": 1
+    "hp": 215
   },
   "ammo": {
     "total": 180
@@ -9,21 +9,14 @@
   "gates": [
     {
       "x": 200,
-      "y": 880,
+      "y": 860,
       "width": 200,
       "type": "mul",
       "value": 2
     },
     {
       "x": 520,
-      "y": 720,
-      "width": 200,
-      "type": "mul",
-      "value": 2
-    },
-    {
-      "x": 200,
-      "y": 560,
+      "y": 860,
       "width": 200,
       "type": "add",
       "value": 10,
@@ -39,27 +32,39 @@
       }
     },
     {
-      "x": 520,
-      "y": 420,
+      "x": 200,
+      "y": 620,
       "width": 180,
       "type": "add",
       "value": -5
+    },
+    {
+      "x": 520,
+      "y": 620,
+      "width": 180,
+      "type": "mul",
+      "value": 3
     }
   ],
   "enemies": [
     {
-      "type": "static",
-      "x": 520,
-      "y": 880,
-      "radius": 34,
-      "hp": 40
+      "type": "patrol",
+      "x": 135,
+      "y": 740,
+      "radius": 30,
+      "hp": 40,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 160
+      }
     },
     {
       "type": "static",
-      "x": 200,
-      "y": 720,
-      "radius": 34,
-      "hp": 40
+      "x": 520,
+      "y": 440,
+      "radius": 30,
+      "hp": 50
     }
   ]
 }

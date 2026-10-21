@@ -1,7 +1,7 @@
 {
   "name": "Asedio",
   "tower": {
-    "hp": 1
+    "hp": 635
   },
   "ammo": {
     "total": 260

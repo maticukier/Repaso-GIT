@@ -1,7 +1,7 @@
 {
   "name": "Primer disparo",
   "tower": {
-    "hp": 1
+    "hp": 25
   },
   "ammo": {
     "total": 60

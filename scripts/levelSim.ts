@@ -25,9 +25,17 @@ import { CANNON, MINION, POOL } from '../src/data/tuning';
 const SPEED = (MINION.speedMin + MINION.speedMax) / 2;
 const MUZZLE_Y = CANNON.y + CANNON.muzzleOffsetY;
 const SIM_DT = 1 / 60;
-/** Apertura inicial de cada disparo (deriva lateral) y columna de fusión, en px. */
-const SHOT_SPREAD = 10;
+/**
+ * Deriva lateral de cada disparo (vx aleatorio ±70 amortiguado): a mitad de
+ * carril ronda ±32 px, aproximado con 4 columnas equiespaciadas.
+ */
+const SHOT_OFFSETS = [-24, -8, 8, 24];
+/** Sub-paquetes a menos de esta distancia se fusionan, en px. */
 const COLUMN = 6;
+/** Deriva lateral extra de los clones después de nacer, en px. */
+const CLONE_DRIFT = 20;
+/** Posiciones relativas de los clones al abrirse en abanico. */
+const FAN_OFFSETS = [-0.75, -0.25, 0.25, 0.75];
 
 export interface Strategy {
   aimA: number;
@@ -144,8 +152,8 @@ export function simulate(level: LevelDef, strategy: Strategy, shots: Float64Arra
   for (let s = 0; s < shots.length; s++) {
     const t0 = shots[s];
     const aim = s < strategy.switchAt ? strategy.aimA : strategy.aimB;
-    px = [aim - SHOT_SPREAD, aim + SHOT_SPREAD];
-    pc = [0.5, 0.5];
+    px = SHOT_OFFSETS.map((o) => aim + o);
+    pc = SHOT_OFFSETS.map(() => 1 / SHOT_OFFSETS.length);
     let count = 1;
 
     for (const ob of obstacles) {
@@ -157,7 +165,8 @@ export function simulate(level: LevelDef, strategy: Strategy, shots: Float64Arra
         const t = t0 + (MUZZLE_Y - g.y) / SPEED;
         const gx = g.move ? pingPong(g.x, g.move, t) : g.x;
         const half = g.width / 2;
-        const fan = Math.min(60, half) / 2;
+        // Abanico de spawn (hasta ±60 dentro de la puerta) + deriva lateral posterior.
+        const fan = Math.min(60, half) + CLONE_DRIFT;
         const st = gateState.get(g)!;
         retire(t);
         let room = Math.max(0, POOL.capacity - aliveOthers - count);
@@ -196,9 +205,10 @@ export function simulate(level: LevelDef, strategy: Strategy, shots: Float64Arra
           clones = Math.min(clones, room);
           room -= clones;
           put(x, survivors);
-          // Abanico de clones dentro del ancho de la puerta.
-          put(Math.max(gx - half, x - fan), clones / 2);
-          put(Math.min(gx + half, x + fan), clones / 2);
+          // Abanico de clones (uniforme en ±fan) dentro del ancho de la puerta.
+          const lo = gx - half - CLONE_DRIFT;
+          const hi = gx + half + CLONE_DRIFT;
+          for (const f of FAN_OFFSETS) put(Math.min(hi, Math.max(lo, x + f * fan)), clones / FAN_OFFSETS.length);
         }
       } else if (ob.enemy) {
         const e = ob.enemy;
@@ -211,7 +221,11 @@ export function simulate(level: LevelDef, strategy: Strategy, shots: Float64Arra
         p = enemyPos(e, t);
         if (e.regenPerSec > 0) st.hp = Math.min(e.hp, st.hp + e.regenPerSec * (t - st.lastT));
         st.lastT = t;
-        const reach = e.radius + MINION.radius;
+        // Mientras el paquete atraviesa la franja del enemigo (2*reach de alto),
+        // un enemigo que se mueve en X barre ancho extra.
+        const baseReach = e.radius + MINION.radius;
+        const lateral = e.patrol ? e.patrol.speed : e.orbit ? Math.abs(e.orbit.speed * e.orbit.radius) : 0;
+        const reach = baseReach + (lateral * baseReach) / SPEED;
         for (let k = 0; k < px.length; k++) {
           let c = pc[k];
           if (st.hp > 0 && Math.abs(px[k] - p.x) <= reach) {

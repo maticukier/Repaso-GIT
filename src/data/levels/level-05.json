@@ -1,7 +1,7 @@
 {
   "name": "El guardián",
   "tower": {
-    "hp": 1
+    "hp": 80
   },
   "ammo": {
     "total": 90

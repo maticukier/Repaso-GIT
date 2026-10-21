@@ -2,7 +2,7 @@
   "name": "El Bastión",
   "boss": true,
   "tower": {
-    "hp": 1
+    "hp": 340
   },
   "ammo": {
     "total": 170

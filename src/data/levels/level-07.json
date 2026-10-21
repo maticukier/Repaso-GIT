@@ -1,7 +1,7 @@
 {
   "name": "La patrulla",
   "tower": {
-    "hp": 1
+    "hp": 140
   },
   "ammo": {
     "total": 110

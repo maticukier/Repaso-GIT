@@ -1,7 +1,7 @@
 {
   "name": "Doble patrulla",
   "tower": {
-    "hp": 1
+    "hp": 380
   },
   "ammo": {
     "total": 190
