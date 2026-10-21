@@ -1,0 +1,56 @@
+{
+  "name": "Doble patrulla",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 190
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 880,
+      "width": 300,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 360,
+      "y": 560,
+      "width": 160,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 175,
+        "maxX": 545,
+        "speed": 130
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 720,
+      "radius": 30,
+      "hp": 35,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 160
+      }
+    },
+    {
+      "type": "patrol",
+      "x": 560,
+      "y": 420,
+      "radius": 30,
+      "hp": 40,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 190
+      }
+    }
+  ]
+}

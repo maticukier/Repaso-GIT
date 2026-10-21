@@ -1,0 +1,56 @@
+{
+  "name": "Relojería",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 240
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 880,
+      "width": 280,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 360,
+      "y": 640,
+      "width": 160,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 175,
+        "maxX": 545,
+        "speed": 180
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "orbiter",
+      "x": 360,
+      "y": 460,
+      "radius": 26,
+      "hp": 45,
+      "orbit": {
+        "radius": 120,
+        "speed": 1.6,
+        "phase": 0.0
+      }
+    },
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 760,
+      "radius": 30,
+      "hp": 45,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 200
+      }
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "name": "Muralla",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 220
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 880,
+      "width": 340,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 200,
+      "y": 620,
+      "width": 180,
+      "type": "add",
+      "value": -5
+    },
+    {
+      "x": 520,
+      "y": 620,
+      "width": 180,
+      "type": "mul",
+      "value": 2
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 360,
+      "y": 740,
+      "radius": 40,
+      "hp": 70
+    },
+    {
+      "type": "static",
+      "x": 170,
+      "y": 460,
+      "radius": 30,
+      "hp": 40
+    },
+    {
+      "type": "static",
+      "x": 550,
+      "y": 460,
+      "radius": 30,
+      "hp": 40
+    }
+  ]
+}

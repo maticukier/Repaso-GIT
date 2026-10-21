@@ -1,0 +1,60 @@
+{
+  "name": "El Bastión",
+  "boss": true,
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 170
+  },
+  "gates": [
+    {
+      "x": 200,
+      "y": 880,
+      "width": 200,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 520,
+      "y": 880,
+      "width": 200,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 360,
+      "y": 470,
+      "width": 170,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 180,
+        "maxX": 540,
+        "speed": 120
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "brute",
+      "x": 360,
+      "y": 680,
+      "radius": 50,
+      "hp": 70,
+      "regenPerSec": 5
+    },
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 560,
+      "radius": 30,
+      "hp": 35,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 140
+      }
+    }
+  ]
+}

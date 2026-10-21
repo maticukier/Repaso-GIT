@@ -1,0 +1,48 @@
+{
+  "name": "Insistí",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 120
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 820,
+      "width": 240,
+      "type": "add",
+      "value": -5,
+      "change": {
+        "mode": "upgrade",
+        "every": 6,
+        "to": [
+          {
+            "type": "mul",
+            "value": 2
+          },
+          {
+            "type": "mul",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "x": 200,
+      "y": 520,
+      "width": 180,
+      "type": "mul",
+      "value": 2
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 510,
+      "y": 560,
+      "radius": 32,
+      "hp": 35
+    }
+  ]
+}

@@ -3,9 +3,12 @@ import { Cannon } from '../entities/Cannon';
 import { Enemy } from '../entities/Enemy';
 import { Gate } from '../entities/Gate';
 import { Tower } from '../entities/Tower';
-import { LEVEL } from '../data/level';
+import { Button } from '../entities/Button';
+import { starsFor, type LevelDef } from '../data/levelFormat';
+import { LEVELS } from '../data/levels';
 import {
   CANNON,
+  COLORS,
   DEPTH,
   FLOATING,
   GAME_HEIGHT,
@@ -23,6 +26,7 @@ import { FloatingTextPool } from '../systems/FloatingTextPool';
 import type { HordeContext } from '../systems/HordeContext';
 import { Hud } from '../systems/Hud';
 import { MinionPool } from '../systems/MinionPool';
+import { progress } from '../systems/Progress';
 import { SpatialGrid } from '../systems/SpatialGrid';
 import { readFlags } from '../utils/flags';
 import { randRange } from '../utils/math';
@@ -30,8 +34,13 @@ import { MINION_FRAMES, TEX } from '../utils/textures';
 
 type State = 'playing' | 'won' | 'lost';
 
-/** Tiempo real mínimo (ms) antes de aceptar el tap de reintento (evita reinicios accidentales). */
-const RETRY_DELAY_MS = 800;
+/** Pausa (ms) entre el fin de la partida y la pantalla de resultado. */
+const RESULT_DELAY_MS = 700;
+
+export interface GameSceneData {
+  /** Índice 0-based en LEVELS. */
+  level?: number;
+}
 
 export class GameScene extends Phaser.Scene {
   private cannon!: Cannon;
@@ -51,8 +60,9 @@ export class GameScene extends Phaser.Scene {
   private lastPointerX = 0;
   private fireAcc = 0;
 
+  private levelIndex = 0;
+  private level!: LevelDef;
   private state: State = 'playing';
-  private endedAt = 0;
 
   private stress = false;
   private stressTarget: number = STRESS.defaultTarget;
@@ -64,12 +74,16 @@ export class GameScene extends Phaser.Scene {
     super('Game');
   }
 
+  init(data: GameSceneData): void {
+    this.levelIndex = Phaser.Math.Clamp(data.level ?? 0, 0, LEVELS.length - 1);
+  }
+
   create(): void {
     const flags = readFlags(STRESS.defaultTarget);
     this.stress = flags.stress;
     this.stressTarget = Math.min(flags.stressTarget, POOL.capacity);
+    this.level = LEVELS[this.levelIndex];
     this.state = 'playing';
-    this.endedAt = 0;
     this.dragPointerId = -1;
     this.fireAcc = 0;
 
@@ -87,13 +101,35 @@ export class GameScene extends Phaser.Scene {
       invulnerable: this.stress,
     };
 
-    this.tower = new Tower(this, LEVEL.tower.hp, LEVEL.tower.lineY);
-    this.gates = LEVEL.gates.map((def, i) => new Gate(this, def, i, this.floating));
-    this.enemies = LEVEL.enemies.map((def) => new Enemy(this, def));
+    const lv = this.level;
+    this.tower = new Tower(this, lv.tower.hp, lv.tower.lineY, lv.boss);
+    this.gates = lv.gates.map((def, i) => new Gate(this, def, i, this.floating));
+    this.enemies = lv.enemies.map((def) => new Enemy(this, def));
 
     this.cannon = new Cannon(this, GAME_WIDTH / 2);
-    this.ammo = new Ammo(LEVEL.ammo.magazine, LEVEL.ammo.total, LEVEL.ammo.regenPerSec, this.stress);
+    this.ammo = new Ammo(lv.ammo.magazine, lv.ammo.total, lv.ammo.regenPerSec, this.stress);
     this.hud = new Hud(this);
+
+    // Volver a la selección. Los toques sobre el botón no disparan el cañón.
+    new Button(this, 52, 52, {
+      width: 72,
+      height: 72,
+      label: '‹',
+      fontSize: 56,
+      color: COLORS.buttonAlt,
+      onClick: () => this.scene.start('LevelSelect'),
+    }).setDepth(DEPTH.hud);
+    this.add
+      .text(GAME_WIDTH - 24, 52, `${lv.number}`, {
+        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+        fontSize: '40px',
+        fontStyle: '900',
+        color: lv.boss ? '#ff4d6d' : '#c9c0ff',
+        stroke: '#10121c',
+        strokeThickness: 7,
+      })
+      .setOrigin(1, 0.5)
+      .setDepth(DEPTH.hud);
 
     this.input.on(Phaser.Input.Events.POINTER_DOWN, this.onPointerDown, this);
     this.input.on(Phaser.Input.Events.POINTER_MOVE, this.onPointerMove, this);
@@ -124,6 +160,10 @@ export class GameScene extends Phaser.Scene {
 
   get gameState(): State {
     return this.state;
+  }
+
+  get levelNumber(): number {
+    return this.level.number;
   }
 
   toggleStress(): void {
@@ -189,35 +229,17 @@ export class GameScene extends Phaser.Scene {
 
   private finish(state: 'won' | 'lost'): void {
     this.state = state;
-    this.endedAt = this.time.now;
     this.releaseDrag();
 
     const won = state === 'won';
-    this.add
-      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x0b0816, 0.55)
-      .setDepth(DEPTH.overlay);
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, won ? '¡Torre destruida!' : 'Sin munición', {
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-        fontSize: '64px',
-        fontStyle: '900',
-        color: won ? '#4fe3c1' : '#ff4d6d',
-        stroke: '#10121c',
-        strokeThickness: 10,
-      })
-      .setOrigin(0.5)
-      .setDepth(DEPTH.overlay);
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 40, 'Tocá para reintentar', {
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-        fontSize: '30px',
-        fontStyle: '700',
-        color: '#ffffff',
-        stroke: '#10121c',
-        strokeThickness: 6,
-      })
-      .setOrigin(0.5)
-      .setDepth(DEPTH.overlay);
+    let stars = 0;
+    if (won) {
+      stars = starsFor(this.level, this.ammo.remaining / this.level.ammo.total);
+      progress.recordWin(this.levelIndex, stars, LEVELS.length);
+    }
+    this.time.delayedCall(RESULT_DELAY_MS, () => {
+      this.scene.launch('Result', { level: this.levelIndex, won, stars });
+    });
   }
 
   private fire(): void {
@@ -247,11 +269,8 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private onPointerDown(pointer: Phaser.Input.Pointer): void {
-    if (this.state !== 'playing') {
-      if (this.time.now - this.endedAt >= RETRY_DELAY_MS) this.scene.restart();
-      return;
-    }
+  private onPointerDown(pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): void {
+    if (this.state !== 'playing' || over.length > 0) return;
     if (this.dragPointerId !== -1) return;
     this.dragPointerId = pointer.id;
     this.lastPointerX = pointer.x;

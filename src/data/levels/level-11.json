@@ -1,0 +1,107 @@
+{
+  "name": "Encrucijada",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 220
+  },
+  "gates": [
+    {
+      "x": 225,
+      "y": 900,
+      "width": 230,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 495,
+      "y": 900,
+      "width": 230,
+      "type": "add",
+      "value": -5,
+      "change": {
+        "mode": "upgrade",
+        "every": 8,
+        "to": [
+          {
+            "type": "mul",
+            "value": 2
+          },
+          {
+            "type": "mul",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "x": 360,
+      "y": 640,
+      "width": 170,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 180,
+        "maxX": 540,
+        "speed": 120
+      }
+    },
+    {
+      "x": 180,
+      "y": 380,
+      "width": 150,
+      "type": "add",
+      "value": 25,
+      "change": {
+        "mode": "wear",
+        "every": 5,
+        "to": [
+          {
+            "type": "add",
+            "value": 10
+          },
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    },
+    {
+      "x": 540,
+      "y": 380,
+      "width": 150,
+      "type": "add",
+      "value": -5
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 360,
+      "y": 775,
+      "radius": 36,
+      "hp": 60
+    },
+    {
+      "type": "patrol",
+      "x": 200,
+      "y": 510,
+      "radius": 30,
+      "hp": 45,
+      "patrol": {
+        "minX": 140,
+        "maxX": 580,
+        "speed": 170
+      }
+    },
+    {
+      "type": "static",
+      "x": 360,
+      "y": 330,
+      "radius": 28,
+      "hp": 40
+    }
+  ]
+}

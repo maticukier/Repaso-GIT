@@ -1,0 +1,27 @@
+{
+  "name": "El guardián",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 90
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 840,
+      "width": 300,
+      "type": "mul",
+      "value": 2
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 360,
+      "y": 600,
+      "radius": 36,
+      "hp": 30
+    }
+  ]
+}

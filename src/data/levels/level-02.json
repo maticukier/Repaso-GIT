@@ -1,0 +1,19 @@
+{
+  "name": "Doble o nada",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 60
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 700,
+      "width": 260,
+      "type": "mul",
+      "value": 2
+    }
+  ],
+  "enemies": []
+}

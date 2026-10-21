@@ -1,0 +1,60 @@
+{
+  "name": "Embudo",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 200
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 860,
+      "width": 180,
+      "type": "mul",
+      "value": 3
+    },
+    {
+      "x": 165,
+      "y": 860,
+      "width": 130,
+      "type": "add",
+      "value": -5
+    },
+    {
+      "x": 555,
+      "y": 860,
+      "width": 130,
+      "type": "add",
+      "value": -5
+    },
+    {
+      "x": 360,
+      "y": 520,
+      "width": 220,
+      "type": "mul",
+      "value": 2
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 360,
+      "y": 680,
+      "radius": 30,
+      "hp": 50
+    },
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 400,
+      "radius": 30,
+      "hp": 40,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 150
+      }
+    }
+  ]
+}

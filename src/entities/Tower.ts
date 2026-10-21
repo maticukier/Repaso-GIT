@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { COLORS, DEPTH, GAME_WIDTH, LANE } from '../data/tuning';
 import type { HordeContext } from '../systems/HordeContext';
-import { NUM_FONT, TEX, TOWER_TEX } from '../utils/textures';
+import { BOSS_TOWER_TEX, NUM_FONT, TEX, TOWER_TEX } from '../utils/textures';
 
 const BAR_W = 300;
 const BAR_H = 20;
@@ -21,18 +21,18 @@ export class Tower {
   private readonly hpText: Phaser.GameObjects.BitmapText;
   private shownHp = -1;
 
-  constructor(scene: Phaser.Scene, hp: number, lineY: number) {
+  constructor(scene: Phaser.Scene, hp: number, lineY: number, boss: boolean) {
     this.hp = hp;
     this.maxHp = hp;
     this.lineY = lineY;
 
     this.sprite = scene.add
-      .image(GAME_WIDTH / 2, lineY + 10, TEX.tower)
+      .image(GAME_WIDTH / 2, lineY + 10, boss ? TEX.towerBoss : TEX.tower)
       .setOrigin(0.5, 1)
       .setDepth(DEPTH.tower);
 
     const bx = GAME_WIDTH / 2 - BAR_W / 2;
-    const by = lineY - TOWER_TEX.height + 4;
+    const by = lineY - (boss ? BOSS_TOWER_TEX : TOWER_TEX).height + 4;
     scene.add.image(bx - 4, by, TEX.px).setOrigin(0, 0.5).setDisplaySize(BAR_W + 8, BAR_H + 8).setTint(0x10121c).setDepth(DEPTH.hud);
     scene.add.image(bx, by, TEX.px).setOrigin(0, 0.5).setDisplaySize(BAR_W, BAR_H).setTint(COLORS.hpBarBg).setDepth(DEPTH.hud);
     this.barFill = scene.add.image(bx, by, TEX.px).setOrigin(0, 0.5).setTint(COLORS.hpBar).setDepth(DEPTH.hud);

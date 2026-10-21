@@ -26,6 +26,20 @@ export const COLORS = {
   tower: 0x5b4f86,
   towerShade: 0x3a3160,
   towerRoof: 0xff7a59,
+  towerBoss: 0x7a3b5e,
+  towerBossShade: 0x4f2340,
+  crown: 0xffd166,
+  enemyBrute: 0xc7663b,
+  enemyBruteShade: 0x6e3018,
+  enemyOrbiter: 0x39c6e6,
+  enemyOrbiterShade: 0x18708a,
+  star: 0xffd166,
+  starEmpty: 0x3b3160,
+  locked: 0x3b3160,
+  button: 0x4fe3c1,
+  buttonAlt: 0x8f7cff,
+  boss: 0xff4d6d,
+  bossLocked: 0x5a2440,
   hpBar: 0xff4d6d,
   hpBarBg: 0x241b3d,
   ammoBar: 0xffd166,
@@ -40,6 +54,8 @@ export const LANE = {
 
 export const CANNON = {
   y: GAME_HEIGHT - 140,
+  /** Distancia mínima del cañón a los bordes del carril. */
+  edgeMargin: 40,
   /** Qué tan rápido el cañón alcanza la posición del dedo (1/s). */
   followSharpness: 28,
   /** Minions por segundo mientras el dedo está apretado. */

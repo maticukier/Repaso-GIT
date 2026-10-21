@@ -1,0 +1,104 @@
+{
+  "name": "Antesala",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 280
+  },
+  "gates": [
+    {
+      "x": 200,
+      "y": 900,
+      "width": 200,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 520,
+      "y": 900,
+      "width": 200,
+      "type": "add",
+      "value": -5,
+      "change": {
+        "mode": "upgrade",
+        "every": 10,
+        "to": [
+          {
+            "type": "mul",
+            "value": 2
+          },
+          {
+            "type": "mul",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "x": 360,
+      "y": 700,
+      "width": 160,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 175,
+        "maxX": 545,
+        "speed": 200
+      }
+    },
+    {
+      "x": 360,
+      "y": 440,
+      "width": 180,
+      "type": "add",
+      "value": 10,
+      "change": {
+        "mode": "wear",
+        "every": 10,
+        "to": [
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "brute",
+      "x": 360,
+      "y": 800,
+      "radius": 40,
+      "hp": 60,
+      "regenPerSec": 5
+    },
+    {
+      "type": "orbiter",
+      "x": 360,
+      "y": 580,
+      "radius": 26,
+      "hp": 50,
+      "orbit": {
+        "radius": 140,
+        "speed": 1.7,
+        "phase": 0.0
+      }
+    },
+    {
+      "type": "static",
+      "x": 170,
+      "y": 440,
+      "radius": 30,
+      "hp": 50
+    },
+    {
+      "type": "static",
+      "x": 550,
+      "y": 440,
+      "radius": 30,
+      "hp": 50
+    }
+  ]
+}

@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { COLORS, GAME_HEIGHT, GAME_WIDTH } from './data/tuning';
 import { BootScene } from './scenes/BootScene';
 import { GameScene } from './scenes/GameScene';
+import { LevelSelectScene } from './scenes/LevelSelectScene';
+import { ResultScene } from './scenes/ResultScene';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -28,7 +30,7 @@ const game = new Phaser.Game({
   },
   disableContextMenu: true,
   banner: false,
-  scene: [BootScene, GameScene],
+  scene: [BootScene, LevelSelectScene, GameScene, ResultScene],
 });
 
 if (import.meta.env.DEV) {

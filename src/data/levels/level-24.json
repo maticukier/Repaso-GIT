@@ -1,0 +1,98 @@
+{
+  "name": "Tres frentes",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 250
+  },
+  "gates": [
+    {
+      "x": 165,
+      "y": 880,
+      "width": 140,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 360,
+      "y": 880,
+      "width": 140,
+      "type": "mul",
+      "value": 3
+    },
+    {
+      "x": 555,
+      "y": 880,
+      "width": 140,
+      "type": "add",
+      "value": 10,
+      "change": {
+        "mode": "wear",
+        "every": 10,
+        "to": [
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    },
+    {
+      "x": 360,
+      "y": 560,
+      "width": 200,
+      "type": "add",
+      "value": -5,
+      "change": {
+        "mode": "upgrade",
+        "every": 10,
+        "to": [
+          {
+            "type": "mul",
+            "value": 2
+          },
+          {
+            "type": "mul",
+            "value": 3
+          }
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 165,
+      "y": 720,
+      "radius": 32,
+      "hp": 50
+    },
+    {
+      "type": "static",
+      "x": 360,
+      "y": 720,
+      "radius": 32,
+      "hp": 60
+    },
+    {
+      "type": "static",
+      "x": 555,
+      "y": 720,
+      "radius": 32,
+      "hp": 50
+    },
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 420,
+      "radius": 30,
+      "hp": 50,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 200
+      }
+    }
+  ]
+}

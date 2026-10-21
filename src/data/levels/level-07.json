@@ -1,0 +1,49 @@
+{
+  "name": "La patrulla",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 110
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 840,
+      "width": 260,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 200,
+      "y": 420,
+      "width": 170,
+      "type": "add",
+      "value": 10,
+      "change": {
+        "mode": "wear",
+        "every": 12,
+        "to": [
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 600,
+      "radius": 30,
+      "hp": 30,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 150
+      }
+    }
+  ]
+}

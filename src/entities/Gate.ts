@@ -1,33 +1,10 @@
 import Phaser from 'phaser';
+import type { GateDef, GateDynamic, GateValue } from '../data/levelFormat';
 import { COLORS, DEPTH, GATE, MINION } from '../data/tuning';
 import type { FloatingTextPool } from '../systems/FloatingTextPool';
 import type { HordeContext } from '../systems/HordeContext';
 import { clamp, randRange } from '../utils/math';
 import { NUM_FONT, TEX } from '../utils/textures';
-
-export interface GateValue {
-  op: 'mul' | 'add';
-  /** mul: x2, x3. add: +10, +25, -5. */
-  n: number;
-}
-
-/**
- * - upgrade: mejora a medida que le disparás (cada minion que la cruza suma).
- * - wear: se gasta a medida que pasan minions.
- * Ambas recorren `values` en orden cada `hitsPerStep` cruces.
- */
-export type GateDynamic = 'none' | 'upgrade' | 'wear';
-
-export interface GateDef {
-  x: number;
-  y: number;
-  width: number;
-  values: readonly GateValue[];
-  dynamic?: GateDynamic;
-  hitsPerStep?: number;
-  /** Movimiento horizontal ida y vuelta. */
-  move?: { minX: number; maxX: number; speed: number };
-}
 
 export function gateLabel(v: GateValue): string {
   if (v.op === 'mul') return `x${v.n}`;
@@ -110,8 +87,8 @@ export class Gate {
     this.x = def.x;
     this.y = def.y;
     this.width = def.width;
-    this.dynamic = def.dynamic ?? 'none';
-    this.hitsPerStep = def.hitsPerStep ?? 0;
+    this.dynamic = def.dynamic;
+    this.hitsPerStep = def.hitsPerStep;
 
     // Una textura horneada por variante (ancho x color); cambiar de valor = setTexture.
     for (const v of def.values) ensureGateTexture(scene, def.width, gateColor(v));

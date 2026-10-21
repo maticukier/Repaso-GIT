@@ -1,0 +1,39 @@
+{
+  "name": "En movimiento",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 100
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 860,
+      "width": 280,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 360,
+      "y": 620,
+      "width": 170,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 180,
+        "maxX": 540,
+        "speed": 110
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 200,
+      "y": 460,
+      "radius": 30,
+      "hp": 30
+    }
+  ]
+}

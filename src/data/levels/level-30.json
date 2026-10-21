@@ -1,0 +1,131 @@
+{
+  "name": "El Trono",
+  "boss": true,
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 320
+  },
+  "gates": [
+    {
+      "x": 200,
+      "y": 920,
+      "width": 200,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 520,
+      "y": 920,
+      "width": 200,
+      "type": "add",
+      "value": -5,
+      "change": {
+        "mode": "upgrade",
+        "every": 10,
+        "to": [
+          {
+            "type": "mul",
+            "value": 2
+          },
+          {
+            "type": "mul",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "x": 360,
+      "y": 760,
+      "width": 160,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 175,
+        "maxX": 545,
+        "speed": 200
+      }
+    },
+    {
+      "x": 360,
+      "y": 460,
+      "width": 160,
+      "type": "add",
+      "value": 25,
+      "change": {
+        "mode": "wear",
+        "every": 5,
+        "to": [
+          {
+            "type": "add",
+            "value": 10
+          },
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "brute",
+      "x": 360,
+      "y": 620,
+      "radius": 50,
+      "hp": 110,
+      "regenPerSec": 8
+    },
+    {
+      "type": "orbiter",
+      "x": 360,
+      "y": 620,
+      "radius": 26,
+      "hp": 55,
+      "orbit": {
+        "radius": 170,
+        "speed": 1.5,
+        "phase": 0.0
+      }
+    },
+    {
+      "type": "orbiter",
+      "x": 360,
+      "y": 620,
+      "radius": 26,
+      "hp": 55,
+      "orbit": {
+        "radius": 170,
+        "speed": 1.5,
+        "phase": 3.14159
+      }
+    },
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 840,
+      "radius": 30,
+      "hp": 55,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 220
+      }
+    },
+    {
+      "type": "patrol",
+      "x": 560,
+      "y": 400,
+      "radius": 30,
+      "hp": 55,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 230
+      }
+    }
+  ]
+}

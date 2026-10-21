@@ -8,7 +8,14 @@ export const TEX = {
   cannonBarrel: 'cannon-barrel',
   enemyStatic: 'enemy-static',
   enemyPatrol: 'enemy-patrol',
+  enemyBrute: 'enemy-brute',
+  enemyOrbiter: 'enemy-orbiter',
   tower: 'tower',
+  towerBoss: 'tower-boss',
+  star: 'star',
+  lock: 'lock',
+  /** Rect redondeado blanco para NineSlice: botones y paneles de cualquier tamaño. */
+  panel: 'panel',
   /** Blanco 4x4: barras de progreso/HP escaladas y tinteadas, sin redibujar. */
   px: 'px',
 } as const;
@@ -22,6 +29,8 @@ export const NUM_FONT = {
 } as const;
 
 export const TOWER_TEX = { width: LANE.right - LANE.left + 16, height: 230 } as const;
+export const BOSS_TOWER_TEX = { width: TOWER_TEX.width, height: 280 } as const;
+export const PANEL_SLICE = 22;
 
 /** Nombres de frames del spritesheet de minion (squash / stretch). */
 export const MINION_FRAMES = ['f0', 'f1'] as const;
@@ -61,8 +70,33 @@ export function generateTextures(scene: Phaser.Scene): void {
   g.generateTexture(TEX.enemyPatrol, 84, 72);
   g.clear();
 
-  drawTower(g);
+  drawTower(g, TOWER_TEX.width, TOWER_TEX.height, false);
   g.generateTexture(TEX.tower, TOWER_TEX.width, TOWER_TEX.height);
+  g.clear();
+
+  drawTower(g, BOSS_TOWER_TEX.width, BOSS_TOWER_TEX.height, true);
+  g.generateTexture(TEX.towerBoss, BOSS_TOWER_TEX.width, BOSS_TOWER_TEX.height);
+  g.clear();
+
+  drawEnemyBrute(g);
+  g.generateTexture(TEX.enemyBrute, 128, 128);
+  g.clear();
+
+  drawEnemyOrbiter(g);
+  g.generateTexture(TEX.enemyOrbiter, 80, 80);
+  g.clear();
+
+  drawStar(g, 32, 32, 30, 13);
+  g.generateTexture(TEX.star, 64, 64);
+  g.clear();
+
+  drawLock(g);
+  g.generateTexture(TEX.lock, 48, 56);
+  g.clear();
+
+  g.fillStyle(0xffffff, 1);
+  g.fillRoundedRect(0, 0, PANEL_SLICE * 3, PANEL_SLICE * 3, 20);
+  g.generateTexture(TEX.panel, PANEL_SLICE * 3, PANEL_SLICE * 3);
   g.clear();
 
   g.fillStyle(0xffffff, 1);
@@ -235,34 +269,51 @@ function drawEnemyPatrol(g: Phaser.GameObjects.Graphics): void {
   g.fillCircle(cx + 10, cy - 24, 3.5);
 }
 
-/** Torre enemiga: torreón central + muralla que cierra todo el carril. */
-function drawTower(g: Phaser.GameObjects.Graphics): void {
-  const w = TOWER_TEX.width;
-  const h = TOWER_TEX.height;
+/**
+ * Torre enemiga: torreón central + muralla que cierra todo el carril.
+ * La versión jefe es más alta y ancha, con dos torres laterales y corona.
+ */
+function drawTower(g: Phaser.GameObjects.Graphics, w: number, h: number, boss: boolean): void {
   const cx = w / 2;
+  const body = boss ? COLORS.towerBoss : COLORS.tower;
+  const shade = boss ? COLORS.towerBossShade : COLORS.towerShade;
 
   // Muralla a lo ancho (franja inferior).
   const wallTop = h - 70;
-  g.fillStyle(COLORS.towerShade, 1);
+  g.fillStyle(shade, 1);
   g.fillRect(0, wallTop + 8, w, 62);
-  g.fillStyle(COLORS.tower, 1);
+  g.fillStyle(body, 1);
   g.fillRect(0, wallTop, w, 56);
   for (let x = 0; x < w; x += 44) {
     g.fillRect(x, wallTop - 16, 26, 18);
   }
-  g.fillStyle(COLORS.towerShade, 1);
+  g.fillStyle(shade, 1);
   for (let x = 14; x < w; x += 58) {
     g.fillRect(x, wallTop + 18, 30, 6);
   }
 
+  if (boss) {
+    // Torres laterales.
+    for (const tx of [70, w - 70]) {
+      g.fillStyle(shade, 1);
+      g.fillRect(tx - 42, 96, 84, h - 96);
+      g.fillStyle(body, 1);
+      g.fillRect(tx - 38, 90, 76, h - 104);
+      for (let i = 0; i < 3; i++) g.fillRect(tx - 38 + i * 28, 74, 20, 18);
+      g.fillStyle(0x140f24, 1);
+      g.fillRoundedRect(tx - 10, 120, 20, 30, 10);
+    }
+  }
+
   // Torreón.
-  const kw = 200;
+  const kw = boss ? 240 : 200;
   const kTop = 34;
-  g.fillStyle(COLORS.towerShade, 1);
+  g.fillStyle(shade, 1);
   g.fillRect(cx - kw / 2, kTop + 10, kw, h - kTop - 10);
-  g.fillStyle(COLORS.tower, 1);
+  g.fillStyle(body, 1);
   g.fillRect(cx - kw / 2 + 4, kTop, kw - 8, h - kTop - 14);
-  for (let i = 0; i < 5; i++) {
+  const merlons = boss ? 6 : 5;
+  for (let i = 0; i < merlons; i++) {
     g.fillRect(cx - kw / 2 + 4 + i * 42, kTop - 20, 26, 22);
   }
   g.fillStyle(0xffffff, 0.12);
@@ -274,4 +325,77 @@ function drawTower(g: Phaser.GameObjects.Graphics): void {
   g.fillStyle(COLORS.towerRoof, 1);
   g.fillTriangle(cx + 50, 0, cx + 50, 26, cx + 86, 13);
   g.fillRect(cx + 46, 0, 5, kTop);
+  if (boss) {
+    // Corona sobre la ventana.
+    g.fillStyle(COLORS.crown, 1);
+    g.fillRect(cx - 30, kTop + 74, 60, 14);
+    g.fillTriangle(cx - 30, kTop + 74, cx - 30, kTop + 52, cx - 14, kTop + 74);
+    g.fillTriangle(cx - 12, kTop + 74, cx, kTop + 48, cx + 12, kTop + 74);
+    g.fillTriangle(cx + 30, kTop + 74, cx + 30, kTop + 52, cx + 14, kTop + 74);
+  }
+}
+
+/** Defensor jefe "brute": bloque acorazado con remaches. Textura 128x128, cuerpo ~100. */
+function drawEnemyBrute(g: Phaser.GameObjects.Graphics): void {
+  const c = 64;
+  g.fillStyle(COLORS.enemyBruteShade, 1);
+  g.fillRoundedRect(c - 56, c - 50, 112, 108, 30);
+  g.fillStyle(COLORS.enemyBrute, 1);
+  g.fillRoundedRect(c - 52, c - 54, 104, 100, 28);
+  g.fillStyle(COLORS.crown, 1);
+  g.fillRoundedRect(c - 52, c - 18, 104, 14, 6);
+  for (const [dx, dy] of [[-38, -40], [38, -40], [-38, 32], [38, 32]]) g.fillCircle(c + dx, c + dy, 5);
+  g.fillStyle(0xffffff, 0.2);
+  g.fillRoundedRect(c - 40, c - 48, 46, 14, 7);
+  g.fillStyle(0x1a0b12, 1);
+  g.fillRect(c - 30, c + 4, 22, 9);
+  g.fillRect(c + 8, c + 4, 22, 9);
+  g.fillStyle(COLORS.hpBar, 1);
+  g.fillRect(c - 24, c + 6, 8, 5);
+  g.fillRect(c + 16, c + 6, 8, 5);
+}
+
+/** Defensor jefe "orbiter": esfera con aspas que gira. Textura 80x80, cuerpo ~60. */
+function drawEnemyOrbiter(g: Phaser.GameObjects.Graphics): void {
+  const c = 40;
+  g.fillStyle(COLORS.enemyOrbiterShade, 1);
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
+    g.fillTriangle(
+      c + Math.cos(a) * 39, c + Math.sin(a) * 39,
+      c + Math.cos(a + 0.9) * 24, c + Math.sin(a + 0.9) * 24,
+      c + Math.cos(a - 0.3) * 24, c + Math.sin(a - 0.3) * 24,
+    );
+  }
+  g.fillCircle(c, c, 30);
+  g.fillStyle(COLORS.enemyOrbiter, 1);
+  g.fillCircle(c, c, 27);
+  g.fillStyle(0xffffff, 0.35);
+  g.fillCircle(c - 8, c - 9, 8);
+  g.fillStyle(0x0b1420, 1);
+  g.fillCircle(c, c + 2, 9);
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(c + 3, c - 1, 3);
+}
+
+function drawStar(g: Phaser.GameObjects.Graphics, cx: number, cy: number, outer: number, inner: number): void {
+  const pts: Phaser.Types.Math.Vector2Like[] = [];
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? outer : inner;
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+  }
+  g.fillStyle(0xffffff, 1);
+  g.fillPoints(pts, true);
+}
+
+function drawLock(g: Phaser.GameObjects.Graphics): void {
+  g.lineStyle(7, 0xffffff, 1);
+  g.beginPath();
+  g.arc(24, 22, 13, Math.PI, 0);
+  g.strokePath();
+  g.fillStyle(0xffffff, 1);
+  g.fillRect(10.5, 21, 7, 6);
+  g.fillRect(30.5, 21, 7, 6);
+  g.fillRoundedRect(4, 24, 40, 30, 7);
 }

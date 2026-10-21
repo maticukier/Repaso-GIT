@@ -1,0 +1,79 @@
+{
+  "name": "Trampa dulce",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 250
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 860,
+      "width": 220,
+      "type": "add",
+      "value": 25,
+      "change": {
+        "mode": "wear",
+        "every": 4,
+        "to": [
+          {
+            "type": "add",
+            "value": 10
+          },
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    },
+    {
+      "x": 180,
+      "y": 640,
+      "width": 150,
+      "type": "add",
+      "value": -5
+    },
+    {
+      "x": 540,
+      "y": 640,
+      "width": 150,
+      "type": "add",
+      "value": -5
+    },
+    {
+      "x": 360,
+      "y": 460,
+      "width": 160,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 175,
+        "maxX": 545,
+        "speed": 150
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 360,
+      "y": 720,
+      "radius": 30,
+      "hp": 50
+    },
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 560,
+      "radius": 30,
+      "hp": 50,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 210
+      }
+    }
+  ]
+}

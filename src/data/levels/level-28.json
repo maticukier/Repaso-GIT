@@ -1,0 +1,94 @@
+{
+  "name": "Tormenta",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 270
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 880,
+      "width": 200,
+      "type": "mul",
+      "value": 2,
+      "move": {
+        "minX": 195,
+        "maxX": 525,
+        "speed": 210
+      }
+    },
+    {
+      "x": 360,
+      "y": 680,
+      "width": 180,
+      "type": "add",
+      "value": 25,
+      "change": {
+        "mode": "wear",
+        "every": 4,
+        "to": [
+          {
+            "type": "add",
+            "value": 10
+          },
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    },
+    {
+      "x": 360,
+      "y": 500,
+      "width": 150,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 170,
+        "maxX": 550,
+        "speed": 240
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "orbiter",
+      "x": 360,
+      "y": 780,
+      "radius": 26,
+      "hp": 50,
+      "orbit": {
+        "radius": 160,
+        "speed": 2.0,
+        "phase": 0.0
+      }
+    },
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 600,
+      "radius": 30,
+      "hp": 55,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 230
+      }
+    },
+    {
+      "type": "patrol",
+      "x": 560,
+      "y": 400,
+      "radius": 30,
+      "hp": 55,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 200
+      }
+    }
+  ]
+}

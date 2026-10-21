@@ -1,0 +1,68 @@
+{
+  "name": "Carril rápido",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 210
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 840,
+      "width": 200,
+      "type": "mul",
+      "value": 2,
+      "move": {
+        "minX": 195,
+        "maxX": 525,
+        "speed": 170
+      }
+    },
+    {
+      "x": 360,
+      "y": 600,
+      "width": 160,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 175,
+        "maxX": 545,
+        "speed": 200
+      }
+    },
+    {
+      "x": 360,
+      "y": 400,
+      "width": 200,
+      "type": "add",
+      "value": 10,
+      "change": {
+        "mode": "wear",
+        "every": 10,
+        "to": [
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 200,
+      "y": 720,
+      "radius": 32,
+      "hp": 45
+    },
+    {
+      "type": "static",
+      "x": 520,
+      "y": 480,
+      "radius": 32,
+      "hp": 45
+    }
+  ]
+}

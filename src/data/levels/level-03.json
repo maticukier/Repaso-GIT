@@ -1,0 +1,26 @@
+{
+  "name": "Suma y sigue",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 70
+  },
+  "gates": [
+    {
+      "x": 215,
+      "y": 720,
+      "width": 220,
+      "type": "add",
+      "value": 10
+    },
+    {
+      "x": 505,
+      "y": 720,
+      "width": 220,
+      "type": "mul",
+      "value": 2
+    }
+  ],
+  "enemies": []
+}

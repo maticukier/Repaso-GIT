@@ -1,0 +1,55 @@
+{
+  "name": "Se gasta",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 130
+  },
+  "gates": [
+    {
+      "x": 360,
+      "y": 860,
+      "width": 320,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 360,
+      "y": 520,
+      "width": 200,
+      "type": "add",
+      "value": 25,
+      "change": {
+        "mode": "wear",
+        "every": 5,
+        "to": [
+          {
+            "type": "add",
+            "value": 10
+          },
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "static",
+      "x": 180,
+      "y": 680,
+      "radius": 32,
+      "hp": 35
+    },
+    {
+      "type": "static",
+      "x": 540,
+      "y": 680,
+      "radius": 32,
+      "hp": 35
+    }
+  ]
+}

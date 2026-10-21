@@ -1,0 +1,95 @@
+{
+  "name": "Taller",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 200
+  },
+  "gates": [
+    {
+      "x": 200,
+      "y": 860,
+      "width": 220,
+      "type": "add",
+      "value": -5,
+      "change": {
+        "mode": "upgrade",
+        "every": 6,
+        "to": [
+          {
+            "type": "mul",
+            "value": 2
+          },
+          {
+            "type": "mul",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "x": 520,
+      "y": 860,
+      "width": 220,
+      "type": "add",
+      "value": -5,
+      "change": {
+        "mode": "upgrade",
+        "every": 8,
+        "to": [
+          {
+            "type": "mul",
+            "value": 2
+          },
+          {
+            "type": "mul",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "x": 360,
+      "y": 500,
+      "width": 180,
+      "type": "add",
+      "value": 25,
+      "change": {
+        "mode": "wear",
+        "every": 6,
+        "to": [
+          {
+            "type": "add",
+            "value": 10
+          },
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 680,
+      "radius": 30,
+      "hp": 40,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 170
+      }
+    },
+    {
+      "type": "static",
+      "x": 360,
+      "y": 360,
+      "radius": 28,
+      "hp": 40
+    }
+  ]
+}

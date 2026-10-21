@@ -1,0 +1,11 @@
+{
+  "name": "Primer disparo",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 60
+  },
+  "gates": [],
+  "enemies": []
+}

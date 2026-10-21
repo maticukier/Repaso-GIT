@@ -22,8 +22,8 @@ export class Cannon {
     this.x = x;
     this.targetX = x;
     this.y = CANNON.y;
-    this.minX = LANE.left + 40;
-    this.maxX = LANE.right - 40;
+    this.minX = LANE.left + CANNON.edgeMargin;
+    this.maxX = LANE.right - CANNON.edgeMargin;
 
     this.barrel = scene.add.image(x, this.y, TEX.cannonBarrel).setOrigin(0.5, 1).setDepth(DEPTH.cannon);
     this.base = scene.add.image(x, this.y, TEX.cannonBase).setOrigin(0.5, 0.4).setDepth(DEPTH.cannon);

@@ -1,0 +1,33 @@
+{
+  "name": "Ojo con el rojo",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 80
+  },
+  "gates": [
+    {
+      "x": 170,
+      "y": 760,
+      "width": 150,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 360,
+      "y": 760,
+      "width": 200,
+      "type": "add",
+      "value": -5
+    },
+    {
+      "x": 550,
+      "y": 760,
+      "width": 150,
+      "type": "mul",
+      "value": 2
+    }
+  ],
+  "enemies": []
+}

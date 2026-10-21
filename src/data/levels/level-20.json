@@ -1,0 +1,81 @@
+{
+  "name": "Fortaleza giratoria",
+  "boss": true,
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 260
+  },
+  "gates": [
+    {
+      "x": 200,
+      "y": 900,
+      "width": 200,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 520,
+      "y": 900,
+      "width": 200,
+      "type": "mul",
+      "value": 2
+    },
+    {
+      "x": 360,
+      "y": 760,
+      "width": 180,
+      "type": "add",
+      "value": -5,
+      "change": {
+        "mode": "upgrade",
+        "every": 8,
+        "to": [
+          {
+            "type": "mul",
+            "value": 2
+          },
+          {
+            "type": "mul",
+            "value": 3
+          }
+        ]
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "orbiter",
+      "x": 360,
+      "y": 560,
+      "radius": 26,
+      "hp": 45,
+      "orbit": {
+        "radius": 150,
+        "speed": 1.3,
+        "phase": 0.0
+      }
+    },
+    {
+      "type": "orbiter",
+      "x": 360,
+      "y": 560,
+      "radius": 26,
+      "hp": 45,
+      "orbit": {
+        "radius": 150,
+        "speed": 1.3,
+        "phase": 3.14159
+      }
+    },
+    {
+      "type": "brute",
+      "x": 360,
+      "y": 560,
+      "radius": 44,
+      "hp": 80,
+      "regenPerSec": 6
+    }
+  ]
+}

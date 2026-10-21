@@ -1,0 +1,86 @@
+{
+  "name": "Cuidado al sumar",
+  "tower": {
+    "hp": 1
+  },
+  "ammo": {
+    "total": 230
+  },
+  "gates": [
+    {
+      "x": 200,
+      "y": 840,
+      "width": 200,
+      "type": "add",
+      "value": 25,
+      "change": {
+        "mode": "wear",
+        "every": 4,
+        "to": [
+          {
+            "type": "add",
+            "value": 10
+          },
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    },
+    {
+      "x": 520,
+      "y": 840,
+      "width": 200,
+      "type": "add",
+      "value": 25,
+      "change": {
+        "mode": "wear",
+        "every": 4,
+        "to": [
+          {
+            "type": "add",
+            "value": 10
+          },
+          {
+            "type": "add",
+            "value": -5
+          }
+        ]
+      }
+    },
+    {
+      "x": 360,
+      "y": 560,
+      "width": 170,
+      "type": "mul",
+      "value": 3,
+      "move": {
+        "minX": 180,
+        "maxX": 540,
+        "speed": 140
+      }
+    }
+  ],
+  "enemies": [
+    {
+      "type": "patrol",
+      "x": 135,
+      "y": 700,
+      "radius": 30,
+      "hp": 45,
+      "patrol": {
+        "minX": 135,
+        "maxX": 585,
+        "speed": 180
+      }
+    },
+    {
+      "type": "static",
+      "x": 360,
+      "y": 420,
+      "radius": 32,
+      "hp": 50
+    }
+  ]
+}
