@@ -7,5 +7,9 @@
     "total": 60
   },
   "gates": [],
-  "enemies": []
+  "enemies": [],
+  "stars": {
+    "two": 0.06,
+    "three": 0.17
+  }
 }

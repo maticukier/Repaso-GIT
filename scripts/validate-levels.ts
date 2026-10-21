@@ -57,7 +57,7 @@ files.forEach((file, i) => {
     nivel: level.number,
     nombre: level.name + (level.boss ? ' [JEFE]' : ''),
     hpTorre: level.tower.hp,
-    dañoMax: potential.damage,
+    dañoMax: Math.round(potential.damage),
     margen: Number(margin.toFixed(2)),
     gana: win.won,
     estrategia: win.won ? strat : '-',

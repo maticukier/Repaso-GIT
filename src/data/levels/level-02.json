@@ -15,5 +15,9 @@
       "value": 2
     }
   ],
-  "enemies": []
+  "enemies": [],
+  "stars": {
+    "two": 0.07,
+    "three": 0.18
+  }
 }
