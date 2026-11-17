@@ -14,9 +14,12 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import AdivinaGame from './src/components/AdivinaGame';
+import BottomNav, { type NavItem } from './src/components/BottomNav';
 import CartaGame from './src/components/CartaGame';
 import Grid from './src/components/Grid';
 import Header from './src/components/Header';
+import RankingGame from './src/components/RankingGame';
+import RebuscadoGame from './src/components/RebuscadoGame';
 import Keyboard from './src/components/Keyboard';
 import {
   dateKey,
@@ -46,16 +49,19 @@ import {
   loadStats,
   recordWin,
   loadCartaProgress,
+  loadPuntosProgress,
   loadWordleProgress,
   saveProgress,
   type Stats,
 } from './src/lib/storage';
+import { RANKING_ROUNDS } from './src/lib/ranking';
+import { ROUNDS } from './src/lib/rebuscado';
 import { colors } from './src/theme';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safe} edges={['top']}>
         <StatusBar style="light" />
         <Game />
       </SafeAreaView>
@@ -63,18 +69,12 @@ export default function App() {
   );
 }
 
-type Mode = 'crucigrama' | 'adivina' | 'carta';
-
-const MODES: { id: Mode; label: string }[] = [
-  { id: 'crucigrama', label: '🧩 Crucigrama' },
-  { id: 'adivina', label: '🎯 Adiviná' },
-  { id: 'carta', label: '🃏 La carta' },
-];
+type Mode = 'crucigrama' | 'adivina' | 'carta' | 'rebuscado' | 'ranking';
 
 function Game() {
   const [day, setDay] = useState(dateKey);
 
-  // A la medianoche aparece el crucigrama nuevo.
+  // A la medianoche aparecen los juegos nuevos.
   useEffect(() => {
     const id = setInterval(() => setDay(dateKey()), 1000);
     return () => clearInterval(id);
@@ -83,21 +83,27 @@ function Game() {
   const [mode, setMode] = useState<Mode>('crucigrama');
   const [level, setLevel] = useState<Level>('facil');
   const [done, setDone] = useState<Partial<Record<Level, boolean>>>({});
-  const [adivinaDone, setAdivinaDone] = useState(false);
-  const [cartaDone, setCartaDone] = useState(false);
+  // Juegos (además del crucigrama) que ya se terminaron hoy.
+  const [finished, setFinished] = useState<Partial<Record<Mode, boolean>>>({});
 
-  // Qué juegos del día ya están terminados, para marcarlos en las pestañas.
+  // Qué juegos del día ya están terminados, para marcarlos en la barra.
   useEffect(() => {
     let cancelled = false;
     Promise.all([
       Promise.all(LEVELS.map((l) => loadProgress(day, l.id))),
       loadWordleProgress(day),
       loadCartaProgress(day),
-    ]).then(([all, adivina, carta]) => {
+      loadPuntosProgress('rebuscado', day),
+      loadPuntosProgress('ranking', day),
+    ]).then(([all, adivina, carta, rebuscado, ranking]) => {
       if (cancelled) return;
       setDone(Object.fromEntries(LEVELS.map((l, i) => [l.id, !!all[i]?.completed])));
-      setAdivinaDone(!!adivina?.finished);
-      setCartaDone(!!carta?.finished);
+      setFinished({
+        adivina: !!adivina?.finished,
+        carta: !!carta?.finished,
+        rebuscado: (rebuscado?.picks.length ?? 0) >= ROUNDS,
+        ranking: (ranking?.picks.length ?? 0) >= RANKING_ROUNDS,
+      });
     });
     return () => {
       cancelled = true;
@@ -105,62 +111,49 @@ function Game() {
   }, [day]);
 
   const onCompleted = useCallback((l: Level) => setDone((prev) => ({ ...prev, [l]: true })), []);
-  const onAdivinaFinished = useCallback(() => setAdivinaDone(true), []);
-  const onCartaFinished = useCallback(() => setCartaDone(true), []);
-
-  const crucigramaDone = LEVELS.every((l) => done[l.id]);
-  const modeTabs = (
-    <View style={styles.modeTabs}>
-      {MODES.map((m) => {
-        const active = m.id === mode;
-        const finished =
-          m.id === 'crucigrama' ? crucigramaDone : m.id === 'adivina' ? adivinaDone : cartaDone;
-        return (
-          <Pressable
-            key={m.id}
-            onPress={() => setMode(m.id)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
-            style={[styles.modeTab, active && styles.modeTabActive]}
-          >
-            <Text style={[styles.modeTabText, active && styles.modeTabTextActive]}>
-              {m.label}
-              {finished ? ' ✓' : ''}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
+  const markFinished = useCallback(
+    (m: Mode) => setFinished((prev) => ({ ...prev, [m]: true })),
+    [],
   );
+  const onAdivinaFinished = useCallback(() => markFinished('adivina'), [markFinished]);
+  const onCartaFinished = useCallback(() => markFinished('carta'), [markFinished]);
+  const onRebuscadoFinished = useCallback(() => markFinished('rebuscado'), [markFinished]);
+  const onRankingFinished = useCallback(() => markFinished('ranking'), [markFinished]);
+
+  const items: NavItem<Mode>[] = [
+    { id: 'crucigrama', icon: '🧩', label: 'Crucigrama', done: LEVELS.every((l) => done[l.id]) },
+    { id: 'adivina', icon: '🎯', label: 'Adiviná', done: !!finished.adivina },
+    { id: 'carta', icon: '🃏', label: 'La carta', done: !!finished.carta },
+    { id: 'rebuscado', icon: '🕵️', label: 'Rebuscado', done: !!finished.rebuscado },
+    { id: 'ranking', icon: '📊', label: 'Ranking', done: !!finished.ranking },
+  ];
 
   const subtitle = `#${puzzleNumber(day)} · ${formatDay(day)}`;
 
-  if (mode === 'carta') {
-    return (
-      <CartaGame
-        key={day}
-        day={day}
-        subtitle={subtitle}
-        tabs={modeTabs}
-        onFinished={onCartaFinished}
-      />
+  let screen: ReactNode;
+  if (mode === 'ranking') {
+    screen = <RankingGame key={day} day={day} subtitle={subtitle} onFinished={onRankingFinished} />;
+  } else if (mode === 'rebuscado') {
+    screen = (
+      <RebuscadoGame key={day} day={day} subtitle={subtitle} onFinished={onRebuscadoFinished} />
     );
-  }
-
-  if (mode === 'adivina') {
-    return (
+  } else if (mode === 'carta') {
+    screen = (
+      <CartaGame key={day} day={day} subtitle={subtitle} tabs={null} onFinished={onCartaFinished} />
+    );
+  } else if (mode === 'adivina') {
+    screen = (
       <AdivinaGame
         key={day}
         day={day}
         subtitle={subtitle}
-        tabs={modeTabs}
+        tabs={null}
         onFinished={onAdivinaFinished}
       />
     );
-  }
-
-  const levelTabs = (
-    <View style={styles.tabs}>
+  } else {
+    const levelTabs = (
+      <View style={styles.tabs}>
         {LEVELS.map((l) => {
           const active = l.id === level;
           return (
@@ -178,23 +171,25 @@ function Game() {
             </Pressable>
           );
         })}
-    </View>
-  );
+      </View>
+    );
+    screen = (
+      <DailyGame
+        key={`${day}:${level}`}
+        day={day}
+        level={level}
+        subtitle={subtitle}
+        tabs={levelTabs}
+        onCompleted={onCompleted}
+      />
+    );
+  }
 
   return (
-    <DailyGame
-      key={`${day}:${level}`}
-      day={day}
-      level={level}
-      subtitle={subtitle}
-      tabs={
-        <>
-          {modeTabs}
-          {levelTabs}
-        </>
-      }
-      onCompleted={onCompleted}
-    />
+    <View style={styles.app}>
+      <View style={styles.screen}>{screen}</View>
+      <BottomNav items={items} active={mode} onChange={setMode} />
+    </View>
   );
 }
 
@@ -655,27 +650,12 @@ function formatCountdown(ms: number) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.pitch },
+  app: { flex: 1, backgroundColor: colors.surface },
+  screen: { flex: 1 },
   container: { flex: 1, backgroundColor: colors.surface },
   timer: { alignItems: 'flex-end' },
   timerText: { color: colors.chalk, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
   streak: { color: colors.chalk, fontSize: 13, marginTop: 2 },
-  modeTabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.pitchDark,
-  },
-  modeTab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  modeTabActive: { borderBottomColor: colors.chalk },
-  modeTabText: { color: '#BFE5CD', fontWeight: '700', fontSize: 15 },
-  modeTabTextActive: { color: colors.chalk },
   tabs: {
     flexDirection: 'row',
     gap: 6,

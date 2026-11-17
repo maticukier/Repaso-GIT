@@ -167,3 +167,62 @@ export const CARTA_STATS_KEY = 'stats:cartas';
 export const loadCartaProgress = (day: string) => readJson<CartaProgress>(`cartas:${day}`);
 export const saveCartaProgress = (day: string, progress: CartaProgress) =>
   writeJson(`cartas:${day}`, progress);
+
+// Juegos por puntos: "Rebuscado" y "Ranking"
+
+export type PuntosGame = 'rebuscado' | 'ranking';
+
+export type PuntosProgress = {
+  // Jugador elegido en cada ronda ya respondida (null = pasó).
+  picks: (number | null)[];
+};
+
+export type PuntosStats = {
+  played: number;
+  total: number;
+  best: number;
+  currentStreak: number;
+  maxStreak: number;
+  lastDate: string | null;
+};
+
+export const EMPTY_PUNTOS_STATS: PuntosStats = {
+  played: 0,
+  total: 0,
+  best: 0,
+  currentStreak: 0,
+  maxStreak: 0,
+  lastDate: null,
+};
+
+export const loadPuntosProgress = (game: PuntosGame, day: string) =>
+  readJson<PuntosProgress>(`${game}:${day}`);
+export const savePuntosProgress = (game: PuntosGame, day: string, progress: PuntosProgress) =>
+  writeJson(`${game}:${day}`, progress);
+
+// Acá la racha cuenta días seguidos jugados (no hay forma de "perder").
+export async function loadPuntosStats(game: PuntosGame, today: string): Promise<PuntosStats> {
+  const stats = { ...EMPTY_PUNTOS_STATS, ...(await readJson<PuntosStats>(`stats:${game}`)) };
+  if (stats.lastDate && daysBetween(stats.lastDate, today) > 1) stats.currentStreak = 0;
+  return stats;
+}
+
+export function applyPuntosResult(stats: PuntosStats, day: string, score: number): PuntosStats {
+  if (stats.lastDate === day) return stats;
+  const continues = stats.lastDate !== null && daysBetween(stats.lastDate, day) === 1;
+  const currentStreak = continues ? stats.currentStreak + 1 : 1;
+  return {
+    played: stats.played + 1,
+    total: stats.total + score,
+    best: Math.max(stats.best, score),
+    currentStreak,
+    maxStreak: Math.max(stats.maxStreak, currentStreak),
+    lastDate: day,
+  };
+}
+
+export async function recordPuntosResult(game: PuntosGame, day: string, score: number) {
+  const stats = applyPuntosResult(await loadPuntosStats(game, day), day, score);
+  await writeJson(`stats:${game}`, stats);
+  return stats;
+}
