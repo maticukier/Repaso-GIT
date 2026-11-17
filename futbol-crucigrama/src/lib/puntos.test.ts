@@ -17,7 +17,7 @@ import {
 import {
   allCategorias,
   getDailyCategorias,
-  pointsForFame,
+  pointsInCategoria,
   rankedAnswers,
   rebuscadoShareText,
   ROUNDS,
@@ -54,15 +54,18 @@ test('todos los jugadores tienen nombre', () => {
 
 // --- Rebuscado
 
-test('menos fama, más puntos', () => {
-  assert.equal(pointsForFame(228), 10);
-  assert.equal(pointsForFame(57), 30);
-  assert.equal(pointsForFame(3), 100);
-  let prev = 0;
-  for (const fame of [300, 80, 60, 45, 35, 25, 18, 12, 7, 2]) {
-    const p = pointsForFame(fame);
-    assert.ok(p >= prev, 'los puntos no bajan cuando baja la fama');
-    prev = p;
+test('menos fama, más puntos, dentro de cada categoría', () => {
+  for (const c of allCategorias().slice(0, 100)) {
+    const ranked = rankedAnswers(c);
+    const famous = ranked.reduce((x, y) => (y.jugador.fame > x.jugador.fame ? y : x));
+    const rare = ranked.reduce((x, y) => (y.jugador.fame < x.jugador.fame ? y : x));
+    assert.equal(pointsInCategoria(c, famous.jugador.fame), 10, c.t);
+    assert.equal(pointsInCategoria(c, rare.jugador.fame), 100, c.t);
+    for (const r of ranked) {
+      for (const o of ranked) {
+        if (r.jugador.fame < o.jugador.fame) assert.ok(r.points >= o.points, c.t);
+      }
+    }
   }
 });
 
@@ -247,4 +250,13 @@ test('las categorías incluyen a todos los que corresponden', () => {
   valida('Argentinos que pasaron por el Liverpool', 'Gabriel Paletta');
   assert.equal(categoria('Argentinos convocados al Mundial 2022').a.length, 26);
   assert.equal(categoria('Argentinos convocados al Mundial 2006').a.length, 23);
+});
+
+test('cada categoría tiene al menos una respuesta de 100 puntos', () => {
+  for (const c of allCategorias()) {
+    assert.ok(
+      rankedAnswers(c).some((r) => r.points === 100),
+      `"${c.t}" no tiene ninguna respuesta de 100`,
+    );
+  }
 });

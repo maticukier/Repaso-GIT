@@ -7,10 +7,11 @@ import { colors } from '../theme';
 type Props = {
   onPick: (jugador: Jugador) => void;
   placeholder?: string;
+  onFocus?: () => void;
 };
 
 // Buscador de jugadores con sugerencias, compartido por Rebuscado y Ranking.
-export default function PlayerSearch({ onPick, placeholder }: Props) {
+export default function PlayerSearch({ onPick, placeholder, onFocus }: Props) {
   const [query, setQuery] = useState('');
   const suggestions = useMemo(() => searchJugadores(query), [query]);
 
@@ -25,6 +26,7 @@ export default function PlayerSearch({ onPick, placeholder }: Props) {
         autoCapitalize="words"
         style={styles.input}
         accessibilityLabel="Buscar jugador"
+        onFocus={onFocus}
       />
       {suggestions.map((j) => (
         <Pressable

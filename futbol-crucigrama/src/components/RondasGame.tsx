@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { puzzleNumber } from '../lib/daily';
@@ -12,6 +12,7 @@ import {
   recordPuntosResult,
   savePuntosProgress,
 } from '../lib/storage';
+import { scrollToTop, useTyping } from '../lib/teclado';
 import { colors } from '../theme';
 import Header from './Header';
 import PlayerSearch from './PlayerSearch';
@@ -66,6 +67,8 @@ export default function RondasGame<T>({
   const [loaded, setLoaded] = useState(false);
   const [stats, setStats] = useState<PuntosStats>(EMPTY_PUNTOS_STATS);
   const [showResult, setShowResult] = useState(false);
+  const cardRef = useRef<View>(null);
+  const typing = useTyping();
 
   useEffect(() => {
     let cancelled = false;
@@ -123,7 +126,10 @@ export default function RondasGame<T>({
         }
       />
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.content, typing && styles.contentTyping]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.pills} accessibilityLabel="Progreso de las rondas">
           {rounds.map((_, i) => {
             const done = i < picks.length;
@@ -149,15 +155,15 @@ export default function RondasGame<T>({
         </View>
 
         {round !== null && (
-          <View style={styles.card}>
+          <View style={styles.card} ref={cardRef}>
             <Text style={styles.roundLabel}>
               Ronda {view + 1} de {rounds.length}
             </Text>
             {renderPrompt(round)}
             {!answered && (
               <>
-                <Text style={styles.help}>{help}</Text>
-                <PlayerSearch onPick={onPick} />
+                {!typing && <Text style={styles.help}>{help}</Text>}
+                <PlayerSearch onPick={onPick} onFocus={() => scrollToTop(cardRef.current)} />
                 <Pressable onPress={() => answer(null)} style={styles.skip}>
                   <Text style={styles.skipText}>No sé, paso (0 puntos)</Text>
                 </Pressable>
@@ -234,6 +240,8 @@ const styles = StyleSheet.create({
   headerMax: { fontSize: 13, fontWeight: '600', color: '#BFE5CD' },
   headerSmall: { color: '#BFE5CD', fontSize: 12, marginTop: 2 },
   content: { padding: 16, gap: 14, alignItems: 'center' },
+  // Con el teclado abierto: espacio extra abajo para poder subir la pregunta hasta arriba.
+  contentTyping: { paddingBottom: 420 },
   pills: { flexDirection: 'row', gap: 8 },
   pill: {
     width: 46,

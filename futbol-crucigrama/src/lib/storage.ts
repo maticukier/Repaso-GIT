@@ -26,8 +26,8 @@ export const EMPTY_STATS: Stats = {
 };
 
 // El nivel fácil usa las claves originales para conservar el progreso guardado.
-// v2: grillas más grandes desde noviembre de 2026 (el progreso viejo no encaja en ellas).
-const progressKey = (day: string, level: Level) => `progress2:${level}:${day}`;
+// v3: grillas de 30 palabras desde noviembre de 2026 (el progreso viejo no encaja en ellas).
+const progressKey = (day: string, level: Level) => `progress3:${level}:${day}`;
 const statsKey = (level: Level) => (level === 'facil' ? 'stats' : `stats:${level}`);
 
 async function readJson<T>(key: string): Promise<T | null> {

@@ -56,6 +56,7 @@ import {
 } from './src/lib/storage';
 import { RANKING_ROUNDS } from './src/lib/ranking';
 import { ROUNDS } from './src/lib/rebuscado';
+import { useTyping } from './src/lib/teclado';
 import { colors } from './src/theme';
 
 export default function App() {
@@ -137,6 +138,8 @@ function Game() {
   ];
 
   const subtitle = `#${puzzleNumber(day)} · ${formatDay(day)}`;
+  // Mientras se escribe con el teclado del celular, la barra de abajo se oculta para dejar lugar.
+  const typing = useTyping();
 
   let screen: ReactNode;
   if (mode === 'ranking') {
@@ -196,7 +199,7 @@ function Game() {
   return (
     <View style={styles.app}>
       <View style={styles.screen}>{screen}</View>
-      <BottomNav items={items} active={mode} onChange={setMode} />
+      {!typing && <BottomNav items={items} active={mode} onChange={setMode} />}
     </View>
   );
 }

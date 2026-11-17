@@ -11,7 +11,7 @@ App de celular (Expo / React Native) con cinco juegos de fútbol que se renuevan
   - Teclado en pantalla; tocar una casilla dos veces cambia entre horizontal y vertical. **Revisar** marca en rojo las letras incorrectas y **Revelar letra** ayuda (y queda registrado).
 - **🎯 Adiviná el crack**: estilo Wordle. Una palabra por día (jugador, club o término de fútbol, de 5 a 7 letras) y 6 intentos. Después del 3er intento aparece una pista.
 - **🃏 ¿Quién es la carta?**: una carta de FIFA 14 a FC 26 por día y 6 intentos para adivinar el jugador. Al principio se ven 2 stats; con cada error se suma una pista: nacionalidad, posición, 2 stats más, todos los stats y, por último, la media. Al terminar se ve la foto del jugador.
-- **🕵️ Rebuscado**: 5 categorías por día (por ejemplo, "Argentinos que jugaron en el Liverpool"). Se da una sola respuesta por categoría y cuanto menos conocido es el jugador, más puntos: de 10 por el más obvio a 100 por una joya oculta.
+- **🕵️ Rebuscado**: 5 categorías por día (por ejemplo, "Argentinos que pasaron por el Liverpool"). Se da una sola respuesta por categoría y cuanto menos conocido es el jugador, más puntos: dentro de cada categoría, el más conocido vale 10 y el menos conocido vale 100.
 - **📊 Ranking**: 5 preguntas por día del tipo "¿quién es el goleador histórico n.º 28 del Manchester United?". Un intento por pregunta: el puesto exacto vale 100 puntos y va bajando según a cuántos puestos quedó el jugador nombrado.
 
 ## Datos y créditos

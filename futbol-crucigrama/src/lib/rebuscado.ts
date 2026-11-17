@@ -21,22 +21,28 @@ const CATEGORIAS = data.c as Categoria[];
 export const ROUNDS = 5;
 export const MAX_POINTS = 100;
 
-// Puntos según en cuántas Wikipedias aparece el jugador (su "fama").
-const TIERS: [minFame: number, points: number][] = [
-  [90, 10],
-  [70, 20],
-  [55, 30],
-  [42, 40],
-  [32, 50],
-  [24, 60],
-  [17, 70],
-  [11, 80],
-  [6, 90],
-];
+// Puntos relativos a cada categoría: se ordenan los valores de "fama" (en cuántas
+// Wikipedias tiene artículo cada jugador) de las respuestas válidas; el más conocido
+// vale 10, el menos conocido vale 100 y el resto se reparte en el medio, de a 10.
+// Así cada categoría tiene siempre al menos una respuesta de 100.
+const scales = new WeakMap<Categoria, number[]>();
 
-export function pointsForFame(fame: number) {
-  for (const [min, points] of TIERS) if (fame >= min) return points;
-  return MAX_POINTS;
+function scaleOf(categoria: Categoria) {
+  let scale = scales.get(categoria);
+  if (!scale) {
+    scale = [...new Set(categoria.a.map((id) => getJugador(id).fame))].sort((x, y) => y - x);
+    scales.set(categoria, scale);
+  }
+  return scale;
+}
+
+export function pointsInCategoria(categoria: Categoria, fame: number) {
+  const scale = scaleOf(categoria);
+  if (scale.length <= 1) return MAX_POINTS;
+  // Cuántos valores de fama de la lista son mayores: 0 = el más conocido.
+  const above = scale.filter((f) => f > fame).length;
+  const share = Math.min(1, above / (scale.length - 1));
+  return Math.round((10 + 90 * share) / 10) * 10;
 }
 
 export function rarityLabel(points: number) {
@@ -113,7 +119,7 @@ export function isValid(categoria: Categoria, jugadorId: number) {
 // Puntos de una respuesta: 0 si no es válida para la categoría.
 export function scoreAnswer(categoria: Categoria, jugadorId: number | null) {
   if (jugadorId === null || !isValid(categoria, jugadorId)) return 0;
-  return pointsForFame(getJugador(jugadorId).fame);
+  return pointsInCategoria(categoria, getJugador(jugadorId).fame);
 }
 
 // Respuestas válidas ordenadas de la más valiosa a la más obvia.
@@ -121,7 +127,7 @@ export function rankedAnswers(categoria: Categoria) {
   return categoria.a
     .map((id) => {
       const jugador = getJugador(id);
-      return { jugador, points: pointsForFame(jugador.fame) };
+      return { jugador, points: pointsInCategoria(categoria, jugador.fame) };
     })
     .sort((x, y) => y.points - x.points || x.jugador.fame - y.jugador.fame);
 }
