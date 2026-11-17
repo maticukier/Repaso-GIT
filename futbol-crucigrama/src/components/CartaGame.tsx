@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
   cartaShareText,
@@ -15,6 +15,8 @@ import {
   revealed,
   searchPlayers,
 } from '../lib/cartas';
+import credits from '../data/photo-credits.json';
+import { PHOTOS } from '../data/photos';
 import { puzzleNumber } from '../lib/daily';
 import {
   CARTA_STATS_KEY,
@@ -102,6 +104,9 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
     }
   };
 
+  const photo = PHOTOS[player.id];
+  const credit = (credits as Record<string, string[]>)[String(player.id)];
+
   const lastWasMiss = guesses.length > 0 && guesses[guesses.length - 1] !== player.id;
 
   return (
@@ -136,7 +141,15 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
               </View>
             </View>
             <View style={styles.silhouette}>
-              <Text style={styles.silhouetteText}>{finished ? '⚽' : '?'}</Text>
+              {finished && photo ? (
+                <Image
+                  source={{ uri: photo }}
+                  style={styles.photo}
+                  accessibilityLabel={`Foto de ${player.name}`}
+                />
+              ) : (
+                <Text style={styles.silhouetteText}>{finished ? '⚽' : '?'}</Text>
+              )}
             </View>
             <View style={styles.edition}>
               <Text style={styles.editionText}>{editionLabel(card.v)}</Text>
@@ -227,7 +240,12 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
           </View>
         )}
 
-        <Text style={styles.source}>Stats de SoFIFA (FIFA 14 a FC 26).</Text>
+        <Text style={styles.source}>
+          Stats de SoFIFA (FIFA 14 a FC 26).
+          {finished && photo && credit
+            ? ` Foto: ${credit[0]}, ${credit[1]}, vía Wikimedia Commons.`
+            : ''}
+        </Text>
       </ScrollView>
 
       <DailyResult
@@ -308,6 +326,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 8,
   },
+  photo: { width: 96, height: 96, borderRadius: 48 },
   silhouetteText: { fontSize: 48, fontWeight: '900', color: GOLD_DARK },
   edition: {
     backgroundColor: GOLD_DARK,
@@ -387,5 +406,5 @@ const styles = StyleSheet.create({
   primaryText: { color: colors.chalk, fontWeight: '700', fontSize: 15 },
   history: { width: '100%', maxWidth: 440, gap: 4 },
   historyItem: { fontSize: 15, color: colors.text },
-  source: { fontSize: 11, color: colors.textMuted, marginTop: 8 },
+  source: { fontSize: 11, color: colors.textMuted, marginTop: 8, textAlign: 'center' },
 });
