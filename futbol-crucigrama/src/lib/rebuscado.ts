@@ -10,7 +10,10 @@ import { createRng, shuffle } from './random';
 export type Categoria = {
   t: string; // consigna
   g: string; // grupo: 'arg' | 'nac' | 'par' | 'tit'
-  a: number[]; // ids de los jugadores válidos
+  a: number[]; // ids de los jugadores válidos (se muestran al revelar)
+  // Otros que también cuentan aunque no se listen; por ejemplo, alguien con
+  // doble nacionalidad que jugó para otra selección.
+  x?: number[];
 };
 
 const CATEGORIAS = data.c as Categoria[];
@@ -62,6 +65,20 @@ const PLAN: [group: string, perDay: number, offset: number][] = [
   ['tit', 1, 0],
 ];
 
+// Palabras que identifican una categoría: la nacionalidad ("Croatas") y los clubes o torneos.
+function topics(c: Categoria) {
+  const t = c.t.toLowerCase();
+  const out = [t.split(' ')[0]];
+  for (const m of t.matchAll(/(?:por|en|al|a la) (?:el |la )?([^,]+?)(?= y por|$)/g)) out.push(m[1]);
+  return out;
+}
+
+function clashes(id: number, picked: number[]) {
+  if (picked.includes(id)) return true;
+  const mine = topics(CATEGORIAS[id]);
+  return picked.some((p) => topics(CATEGORIAS[p]).some((x) => mine.includes(x)));
+}
+
 export function getDailyCategorias(day: string): Categoria[] {
   const n = puzzleNumber(day) - 1;
   const picked: number[] = [];
@@ -69,8 +86,13 @@ export function getDailyCategorias(day: string): Categoria[] {
     const queue = QUEUES[group].length ? QUEUES[group] : QUEUES.nac;
     let pos = n * perDay + offset;
     let id = queue[((pos % queue.length) + queue.length) % queue.length];
-    // Si justo coincide con otra del mismo día, tomamos la siguiente.
-    while (picked.includes(id)) id = queue[(((++pos % queue.length) + queue.length) % queue.length)];
+    // Si se repite la categoría, la nacionalidad o el club con otra del mismo día, tomamos la siguiente.
+    let tries = 0;
+    while (tries++ < queue.length && clashes(id, picked)) {
+      // Salto grande, para no pisar las categorías de los días siguientes.
+      pos += 97;
+      id = queue[((pos % queue.length) + queue.length) % queue.length];
+    }
     picked.push(id);
   }
   return picked.map((i) => CATEGORIAS[i]);
@@ -84,9 +106,13 @@ export function allCategorias() {
   return CATEGORIAS;
 }
 
+export function isValid(categoria: Categoria, jugadorId: number) {
+  return categoria.a.includes(jugadorId) || (categoria.x ?? []).includes(jugadorId);
+}
+
 // Puntos de una respuesta: 0 si no es válida para la categoría.
 export function scoreAnswer(categoria: Categoria, jugadorId: number | null) {
-  if (jugadorId === null || !categoria.a.includes(jugadorId)) return 0;
+  if (jugadorId === null || !isValid(categoria, jugadorId)) return 0;
   return pointsForFame(getJugador(jugadorId).fame);
 }
 

@@ -25,7 +25,7 @@ App de celular (Expo / React Native) con cinco juegos de fútbol que se renuevan
 | Rankings (`src/data/rankings.json`) | Listas de Wikipedia en inglés (noviembre de 2026) | CC BY-SA 4.0 |
 | Base de jugadores (`src/data/players.json`) | Wikipedia y Wikidata | CC BY-SA 4.0 / CC0 |
 
-En Rebuscado, "qué tan conocido" es un jugador se mide por la cantidad de Wikipedias (idiomas) que tienen un artículo sobre él.
+En Rebuscado, "qué tan conocido" es un jugador se mide por la cantidad de Wikipedias (idiomas) que tienen un artículo sobre él. Solo se usan categorías con fuentes completas (planteles de clubes, convocados a cada torneo y premios individuales); las de campeones de Libertadores, Champions, Copa América y Eurocopa se descartaron porque las listas de Wikipedia omiten jugadores. Si alguien tiene doble nacionalidad, su respuesta cuenta para cualquiera de sus países.
 
 ### Cómo regenerar los datos
 
@@ -35,11 +35,13 @@ Los scripts están en `scripts/data-tools/` (Python 3 con `beautifulsoup4`, `lxm
 cd scripts/data-tools
 mkdir -p $WORK/kr $WORK/rk
 python3 kr_clubs.py $WORK        # jugadores de cada club (categorías de Wikipedia)
-python3 kr_extra_api.py $WORK    # campeones y premios
-python3 squads_html.py $WORK     # planteles de Mundiales y Copas América
+python3 kr_extra_api.py $WORK    # premios (Balón de Oro, campeones del mundo, etc.)
+python3 squads_pages.py $WORK    # planteles completos de Mundiales y Copas América
 python3 rk_parse.py $WORK        # rankings de goleadores y partidos
 python3 rk_resolve.py $WORK      # identifica a los jugadores de los rankings
-python3 wd_attrs.py $WORK        # fama, nacionalidad y nombres desde Wikidata
+python3 wd_attrs.py $WORK        # fama, nacionalidad y nombres desde Wikidata (SPARQL)
+python3 api_attrs.py $WORK       # completa lo que falte con la API de Wikidata
+python3 resolve_redirects.py $WORK
 python3 build_games.py $WORK ../../src/data
 ```
 

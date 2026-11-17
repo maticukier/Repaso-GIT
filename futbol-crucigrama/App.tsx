@@ -69,7 +69,7 @@ export default function App() {
   );
 }
 
-const SHOW_REBUSCADO = false;
+const SHOW_REBUSCADO = true;
 
 type Mode = 'crucigrama' | 'adivina' | 'carta' | 'rebuscado' | 'ranking';
 

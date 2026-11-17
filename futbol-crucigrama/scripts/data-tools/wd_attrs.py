@@ -12,12 +12,12 @@ QUERY = '''SELECT ?item ?sl ?dob ?cit ?sport ?es ?en WHERE {
   OPTIONAL { ?b schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> ; schema:name ?en }
 }'''
 
-def fetch_attrs(qids, batch=250, log=True):
+def fetch_attrs(qids, batch=400, log=True):
     out = {}
     qids = sorted(set(qids), key=lambda q: int(q[1:]))
     for i in range(0, len(qids), batch):
         part = qids[i:i + batch]
-        rows = wm.sparql(QUERY % ' '.join('wd:' + q for q in part), gap=15.0)
+        rows = wm.sparql(QUERY % ' '.join('wd:' + q for q in part), gap=60.0)
         for r in rows:
             q = r['item']['value'].rsplit('/', 1)[1]
             d = out.setdefault(q, {})
@@ -36,25 +36,19 @@ def fetch_missing(SP, attrs, qids, label):
     todo = sorted(set(qids) - set(attrs), key=lambda q: int(q[1:]))
     print(f'{label}: {len(set(qids))} ítems; {len(todo)} por bajar', flush=True)
     for i in range(0, len(todo), 2000):
-        attrs.update(fetch_attrs(todo[i:i + 2000], log=False))
+        attrs.update(fetch_attrs(todo[i:i + 2000], log=True))
         for q in todo[i:i + 2000]:
             attrs.setdefault(q, {})  # sin datos: se marca para no volver a pedirlo
         json.dump(attrs, open(path, 'w', encoding='utf-8'), ensure_ascii=False)
         print(f'  {min(i + 2000, len(todo))}/{len(todo)}', time.strftime('%T'), flush=True)
 
 def squad_titles(SP):
-    """Títulos (Wikipedia en inglés) de los convocados de cada selección a cada torneo."""
-    path = os.path.join(SP, 'kr', 'squads-titles.json')
-    if not os.path.exists(path):
-        return {}
-    data = json.load(open(path, encoding='utf-8'))
-    out = {}
-    for key, titles in data['squads'].items():
-        for code, intl in data['intl'].items():
-            both = sorted(set(titles) & set(intl))
-            if both:
-                out[f'{key}:{code}'] = both
-    return out
+    """Títulos (Wikipedia en inglés) de los convocados de cada selección a cada torneo.
+
+    Sale de las páginas de planteles de cada torneo (squads_pages.py), que son completas.
+    """
+    path = os.path.join(SP, 'kr', 'squads-pages.json')
+    return json.load(open(path, encoding='utf-8')) if os.path.exists(path) else {}
 
 if __name__ == '__main__':
     SP = sys.argv[1]
@@ -70,6 +64,10 @@ if __name__ == '__main__':
                 qids.update(e['members'])
     resolved = json.load(open(os.path.join(SP, 'rk', 'resolved.json'), encoding='utf-8'))
     qids.update(resolved['resolved'].values())
+    wd_path = os.path.join(SP, 'kr', 'wd-clubs.json')
+    if os.path.exists(wd_path):
+        for e in json.load(open(wd_path, encoding='utf-8')).values():
+            qids.update(e['members'])
     fetch_missing(SP, attrs, qids, 'clubes, premios y rankings')
 
     # Planteles: los títulos que no correspondan a un jugador ya conocido se resuelven en Wikidata.

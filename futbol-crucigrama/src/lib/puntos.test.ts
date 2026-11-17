@@ -82,8 +82,15 @@ test('cinco categorías distintas por día, iguales para todos', () => {
     const cats = getDailyCategorias(day);
     assert.equal(cats.length, ROUNDS);
     assert.equal(new Set(cats.map((c) => c.t)).size, ROUNDS, `repetidas el ${day}`);
+    const firsts = cats.filter((c) => !c.t.startsWith('Pasaron')).map((c) => c.t.split(' ')[0]);
+    assert.equal(new Set(firsts).size, firsts.length, `nacionalidad repetida el ${day}: ${cats.map((c) => c.t)}`);
   }
   assert.deepEqual(getDailyCategorias('2026-12-01'), getDailyCategorias('2026-12-01'));
+  const days = dayKeys(60).map((d) => new Set(getDailyCategorias(d).map((c) => c.t)));
+  for (let i = 1; i < days.length; i++) {
+    const shared = [...days[i]].filter((t) => days[i - 1].has(t));
+    assert.deepEqual(shared, [], 'categoría repetida en días seguidos');
+  }
 });
 
 test('puntaje de una respuesta de Rebuscado', () => {
@@ -93,7 +100,9 @@ test('puntaje de una respuesta de Rebuscado', () => {
   assert.ok(ranked[0].points >= ranked[ranked.length - 1].points);
   assert.equal(scoreAnswer(c, ranked[0].jugador.id), ranked[0].points);
   assert.equal(scoreAnswer(c, null), 0);
-  const outsider = Array.from({ length: jugadorCount() }, (_, i) => i).find((i) => !c.a.includes(i))!;
+  const outsider = Array.from({ length: jugadorCount() }, (_, i) => i).find(
+    (i) => !c.a.includes(i) && !(c.x ?? []).includes(i),
+  )!;
   assert.equal(scoreAnswer(c, outsider), 0);
   assert.equal(rebuscadoShareText(3, [100, 70, 50, 30, 0]), 'Rebuscado #3: 250/500\n🟪🟦🟩🟨⬛');
 });
@@ -206,4 +215,36 @@ test('estadísticas de los juegos por puntos', () => {
   assert.equal(applyPuntosResult(s, '2026-11-18', 500), s);
   s = applyPuntosResult(s, '2026-11-21', 100);
   assert.deepEqual([s.currentStreak, s.maxStreak, s.best], [1, 2, 400]);
+});
+
+// --- Rebuscado: categorías completas con casos conocidos
+
+function categoria(title: string) {
+  const c = allCategorias().find((x) => x.t === title);
+  assert.ok(c, `falta la categoría: ${title}`);
+  return c!;
+}
+
+function valida(title: string, ...names: string[]) {
+  const c = categoria(title);
+  for (const name of names) {
+    const ids = searchJugadores(name, 20).filter((j) => j.name === name).map((j) => j.id);
+    assert.ok(ids.length > 0, `${name} no está en la base`);
+    assert.ok(
+      ids.some((id) => scoreAnswer(c, id) > 0),
+      `${name} debería contar en "${title}"`,
+    );
+  }
+}
+
+test('las categorías incluyen a todos los que corresponden', () => {
+  valida('Argentinos que pasaron por el Liverpool', 'Alexis Mac Allister', 'Maxi Rodríguez', 'Javier Mascherano');
+  valida('Argentinos campeones del mundo', 'Julián Alvarez', 'Gonzalo Montiel', 'Diego Maradona', 'Mario Kempes');
+  valida('Argentinos convocados a la Copa América 2021', 'Joaquín Correa', 'Lionel Messi');
+  valida('Argentinos que pasaron por el Real Madrid', 'Fernando Redondo', 'Santiago Solari');
+  valida('Pasaron por Boca y por River', 'Gabriel Batistuta', 'Claudio Caniggia');
+  // Doble nacionalidad: Paletta jugó para Italia pero es argentino.
+  valida('Argentinos que pasaron por el Liverpool', 'Gabriel Paletta');
+  assert.equal(categoria('Argentinos convocados al Mundial 2022').a.length, 26);
+  assert.equal(categoria('Argentinos convocados al Mundial 2006').a.length, 23);
 });
