@@ -4,7 +4,7 @@ import { WORDS_MEDIO } from '../data/words-medio';
 import { generatePuzzle, type GeneratorOptions, type Puzzle } from './generator';
 import { createRng } from './random';
 
-export type Level = 'facil' | 'medio' | 'dificil';
+export type Level = 'facil' | 'dificil';
 
 type LevelConfig = {
   id: Level;
@@ -15,21 +15,20 @@ type LevelConfig = {
 };
 
 export const LEVELS: LevelConfig[] = [
-  // El fácil conserva la semilla original para no cambiar los crucigramas ya publicados.
-  { id: 'facil', label: 'Fácil', bank: WORDS, options: {}, seed: 'futbol-crucigrama' },
   {
-    id: 'medio',
-    label: 'Medio',
-    bank: WORDS_MEDIO,
-    options: { targetWords: 11 },
-    seed: 'futbol-crucigrama:medio',
+    id: 'facil',
+    label: 'Fácil',
+    bank: WORDS,
+    options: { maxSize: 12, targetWords: 14 },
+    seed: 'futbol-crucigrama:v2',
   },
+  // El difícil mezcla clubes, estadios y jugadores con apodos e historia, en una grilla más grande.
   {
     id: 'dificil',
     label: 'Difícil',
-    bank: WORDS_DIFICIL,
-    options: { maxSize: 12, targetWords: 12 },
-    seed: 'futbol-crucigrama:dificil',
+    bank: [...WORDS_DIFICIL, ...WORDS_MEDIO],
+    options: { maxSize: 13, targetWords: 18 },
+    seed: 'futbol-crucigrama:dificil:v2',
   },
 ];
 

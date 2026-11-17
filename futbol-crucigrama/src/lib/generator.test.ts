@@ -51,9 +51,11 @@ for (const [name, bank] of Object.entries({ WORDS, WORDS_MEDIO, WORDS_DIFICIL })
   });
 }
 
-test('el fácil de hoy no cambió al agregar niveles', () => {
-  const words = getDailyPuzzle('2026-09-23', 'facil').words.map((w) => w.answer);
-  assert.deepEqual(words.slice(0, 3), ['CRACK', 'SAQUE', 'PALO']);
+test('el difícil es más largo que el fácil', () => {
+  for (const day of dayKeys(30)) {
+    assert.ok(getDailyPuzzle(day, 'facil').words.length >= 11);
+    assert.ok(getDailyPuzzle(day, 'dificil').rows >= 12);
+  }
 });
 
 test('el mismo día genera el mismo crucigrama', () => {
@@ -75,9 +77,9 @@ test('numeración de los crucigramas', () => {
 for (const { id: level } of LEVELS) for (const key of dayKeys(120)) {
   test(`crucigrama ${level} válido para ${key}`, () => {
     const p = getDailyPuzzle(key, level);
-    const max = level === 'dificil' ? 12 : 11;
+    const max = level === 'dificil' ? 13 : 12;
     assert.ok(p.rows <= max && p.cols <= max, `tamaño ${p.rows}x${p.cols}`);
-    assert.ok(p.words.length >= 7, `solo ${p.words.length} palabras`);
+    assert.ok(p.words.length >= 10, `solo ${p.words.length} palabras`);
 
     const expected = p.words
       .map((w) => `${w.direction}:${w.row},${w.col}:${w.answer}`)

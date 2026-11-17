@@ -69,6 +69,8 @@ export default function App() {
   );
 }
 
+const SHOW_REBUSCADO = false;
+
 type Mode = 'crucigrama' | 'adivina' | 'carta' | 'rebuscado' | 'ranking';
 
 function Game() {
@@ -124,7 +126,10 @@ function Game() {
     { id: 'crucigrama', icon: '🧩', label: 'Crucigrama', done: LEVELS.every((l) => done[l.id]) },
     { id: 'adivina', icon: '🎯', label: 'Adiviná', done: !!finished.adivina },
     { id: 'carta', icon: '🃏', label: 'La carta', done: !!finished.carta },
-    { id: 'rebuscado', icon: '🕵️', label: 'Rebuscado', done: !!finished.rebuscado },
+    // Rebuscado queda oculto hasta completar sus datos (todas las respuestas válidas de cada categoría).
+    ...(SHOW_REBUSCADO
+      ? [{ id: 'rebuscado' as const, icon: '🕵️', label: 'Rebuscado', done: !!finished.rebuscado }]
+      : []),
     { id: 'ranking', icon: '📊', label: 'Ranking', done: !!finished.ranking },
   ];
 
