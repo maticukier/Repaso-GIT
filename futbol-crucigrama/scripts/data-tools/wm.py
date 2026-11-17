@@ -40,7 +40,7 @@ def api(host, **params):
     params.setdefault('format', 'json')
     return json.loads(fetch(f'https://{host}/w/api.php?' + urllib.parse.urlencode(params)))
 
-def sparql(query, tries=6, gap=6.0):
+def sparql(query, tries=4, gap=10.0):
     key = hashlib.sha1(('sparql:' + query).encode()).hexdigest()
     path = os.path.join(CACHE, key + '.json')
     if os.path.exists(path):
@@ -69,7 +69,7 @@ def sparql(query, tries=6, gap=6.0):
         try:
             for line in open(hdr, encoding='utf-8', errors='replace'):
                 if line.lower().startswith('retry-after:'):
-                    retry = min(1500, int(line.split(':', 1)[1].strip()) + 5)
+                    retry = min(1200, int(line.split(':', 1)[1].strip()) + 5)
         except Exception:
             pass
         print(f'    (servidor ocupado: espero {retry} s)', flush=True)

@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageOps
 SP = sys.argv[1]
 SIZE = 160
 meta = json.load(open(os.path.join(SP, 'photos-meta.json'), encoding='utf-8'))
-tile = json.load(open(os.path.join(SP, 'tile-overrides.json')))  # [cx, cy, zoom] relativos al recorte por defecto
+tile = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'photo-crops.json')))  # [cx, cy, zoom] relativos al recorte por defecto
 os.makedirs(os.path.join(SP, 'photos'), exist_ok=True)
 tiles = []
 for pid, m in meta.items():

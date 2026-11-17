@@ -116,7 +116,7 @@ for cid, c in clubs.items():
         if code == c['country']:
             continue
         arg = code == 'ARG' or c['country'] == 'ARG'
-        add(f"{dem} que jugaron en {c['es']}", 'arg' if arg else 'nac', by_nat.get((cid, code), ()),
+        add(f"{dem} que pasaron por {c['es']}", 'arg' if arg else 'nac', by_nat.get((cid, code), ()),
             famous_at=20 if c['country'] in ('ARG', 'BRA', 'URU', 'CHI') else 30)
 
 # 2) Pasaron por los dos clubes
@@ -124,7 +124,7 @@ for a, b in combinations(clubs, 2):
     both_arg = clubs[a]['country'] == 'ARG' and clubs[b]['country'] == 'ARG'
     if not ((a in TIER1 and b in TIER1) or both_arg):
         continue
-    add(f"Jugaron en {clubs[a]['es']} y en {clubs[b]['es']}", 'par', clubs[a]['set'] & clubs[b]['set'],
+    add(f"Pasaron por {clubs[a]['es']} y por {clubs[b]['es']}", 'par', clubs[a]['set'] & clubs[b]['set'],
         min_n=4, max_n=60, famous_at=20 if both_arg else 30)
 
 # 3) Campeones y premios
@@ -145,9 +145,9 @@ ALONE = {
 for key, title in ALONE.items():
     add(title, 'tit', awards.get(key, ()), max_n=90)
 BY_CLUB = {
-    'mundial': 'Campeones del mundo que jugaron en', 'balondeoro': 'Ganadores del Balón de Oro que jugaron en',
-    'champions': 'Campeones de la Champions League que jugaron en',
-    'libertadores': 'Campeones de la Copa Libertadores que jugaron en',
+    'mundial': 'Campeones del mundo que pasaron por', 'balondeoro': 'Ganadores del Balón de Oro que pasaron por',
+    'champions': 'Campeones de la Champions League que pasaron por',
+    'libertadores': 'Campeones de la Copa Libertadores que pasaron por',
 }
 EUROPE = {'ENG', 'ESP', 'ITA', 'GER', 'FRA', 'NED', 'POR'}
 for key, phrase in BY_CLUB.items():
@@ -246,9 +246,9 @@ from collections import Counter
 print(f'{len(players)} jugadores ({kb[0]} KB), {len(categories)} categorías ({kb[1]} KB), {len(ranking_out)} rankings ({kb[2]} KB)')
 print('grupos:', dict(Counter(c['g'] for c in categories)))
 print('preguntas de ranking posibles:', sum(len(l['targets']) for l in ranking_out))
-for probe in ('Argentinos que jugaron en el Liverpool', 'Jugaron en Boca y en River', 'Argentinos campeones del mundo',
-              'Ingleses que jugaron en el Real Madrid', 'Uruguayos que jugaron en el Real Madrid', 'Argentinos convocados al Mundial 2006',
-              'Ganadores del Balón de Oro', 'Brasileños que jugaron en el Barcelona'):
+for probe in ('Argentinos que pasaron por el Liverpool', 'Pasaron por Boca y por River', 'Argentinos campeones del mundo',
+              'Ingleses que pasaron por el Real Madrid', 'Uruguayos que pasaron por el Real Madrid', 'Argentinos convocados al Mundial 2006',
+              'Ganadores del Balón de Oro', 'Brasileños que pasaron por el Barcelona', 'Campeones del mundo que pasaron por Boca'):
     c = next((c for c in categories if c['t'] == probe), None)
     if c:
         print(f"\n{probe} ({len(c['a'])}):", ', '.join(f'{title_name(q)} {fame(q)}' for q in c['a'][:45]))

@@ -1,7 +1,9 @@
 import json, sys
 import wm
 
-cards = json.load(open('/home/user/Repaso-GIT/futbol-crucigrama/src/data/fifa-cards.json', encoding='utf-8'))
+import os
+HERE = os.path.dirname(os.path.abspath(__file__))
+cards = json.load(open(os.path.join(HERE, '..', '..', 'src', 'data', 'fifa-cards.json'), encoding='utf-8'))
 players = cards['answers']
 LANGS = ['en', 'es', 'mul', 'fr', 'de', 'pt', 'it']
 found = {}

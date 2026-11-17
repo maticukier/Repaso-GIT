@@ -2,32 +2,33 @@
 import json, os, sys, time
 import wm
 
-QUERY = '''SELECT ?item ?k ?v WHERE {
+QUERY = '''SELECT ?item ?sl ?dob ?cit ?sport ?es ?en WHERE {
   VALUES ?item { %s }
-  { ?item wikibase:sitelinks ?v . BIND("sl" AS ?k) }
-  UNION { ?item wdt:P569 ?v . BIND("dob" AS ?k) }
-  UNION { ?item wdt:P27 ?v . BIND("cit" AS ?k) }
-  UNION { ?item wdt:P1532 ?v . BIND("sport" AS ?k) }
-  UNION { ?a schema:about ?item ; schema:isPartOf <https://es.wikipedia.org/> ; schema:name ?v . BIND("es" AS ?k) }
-  UNION { ?b schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> ; schema:name ?v . BIND("en" AS ?k) }
+  ?item wikibase:sitelinks ?sl .
+  OPTIONAL { ?item wdt:P569 ?dob }
+  OPTIONAL { ?item wdt:P27 ?cit }
+  OPTIONAL { ?item wdt:P1532 ?sport }
+  OPTIONAL { ?a schema:about ?item ; schema:isPartOf <https://es.wikipedia.org/> ; schema:name ?es }
+  OPTIONAL { ?b schema:about ?item ; schema:isPartOf <https://en.wikipedia.org/> ; schema:name ?en }
 }'''
 
-def fetch_attrs(qids, batch=400, log=True):
+def fetch_attrs(qids, batch=250, log=True):
     out = {}
     qids = sorted(set(qids), key=lambda q: int(q[1:]))
     for i in range(0, len(qids), batch):
         part = qids[i:i + batch]
-        rows = wm.sparql(QUERY % ' '.join('wd:' + q for q in part))
+        rows = wm.sparql(QUERY % ' '.join('wd:' + q for q in part), gap=15.0)
         for r in rows:
             q = r['item']['value'].rsplit('/', 1)[1]
-            k = r['k']['value']; v = r['v']['value']
-            if v.startswith('http://www.wikidata.org/entity/'):
-                v = v.rsplit('/', 1)[1]
             d = out.setdefault(q, {})
-            if k in ('sl',): d[k] = int(v)
-            elif k in ('dob', 'es', 'en'): d.setdefault(k, v)
-            else: d.setdefault(k, []).append(v)
-        if log: print(f'  attrs {min(i + batch, len(qids))}/{len(qids)}', flush=True)
+            d['sl'] = int(r['sl']['value'])
+            for k in ('dob', 'es', 'en'):
+                if k in r: d.setdefault(k, r[k]['value'])
+            for k in ('cit', 'sport'):
+                if k in r:
+                    v = r[k]['value'].rsplit('/', 1)[1]
+                    if v not in d.setdefault(k, []): d[k].append(v)
+        if log: print(f'  attrs {min(i + batch, len(qids))}/{len(qids)}', time.strftime('%T'), flush=True)
     return out
 
 def fetch_missing(SP, attrs, qids, label):
@@ -35,7 +36,7 @@ def fetch_missing(SP, attrs, qids, label):
     todo = sorted(set(qids) - set(attrs), key=lambda q: int(q[1:]))
     print(f'{label}: {len(set(qids))} ítems; {len(todo)} por bajar', flush=True)
     for i in range(0, len(todo), 2000):
-        attrs.update(fetch_attrs(todo[i:i + 2000], batch=500, log=False))
+        attrs.update(fetch_attrs(todo[i:i + 2000], log=False))
         for q in todo[i:i + 2000]:
             attrs.setdefault(q, {})  # sin datos: se marca para no volver a pedirlo
         json.dump(attrs, open(path, 'w', encoding='utf-8'), ensure_ascii=False)

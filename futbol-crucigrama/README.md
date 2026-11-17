@@ -1,54 +1,77 @@
 # ⚽ Crucigrama Futbolero
 
-App de celular (Expo / React Native) con juegos de fútbol diarios: tres crucigramas, **Adiviná el crack** y **¿Quién es la carta?**.
+App de celular (Expo / React Native) con cinco juegos de fútbol que se renuevan cada día. Todos los jugadores reciben los mismos juegos: se generan de forma determinística a partir de la fecha. El progreso, las rachas y las estadísticas se guardan en el dispositivo (AsyncStorage).
 
-- **Tres crucigramas por día**, iguales para todos: se generan de forma determinística a partir de la fecha.
+## Los juegos
+
+- **🧩 Crucigrama**: tres por día.
   - **Fácil** (11×11): términos de fútbol, cracks y clubes conocidos.
   - **Medio** (11×11): clubes, estadios, selecciones y jugadores.
   - **Difícil** (12×12): apodos, leyendas, clubes por su sobrenombre e historia.
-- Cada nivel tiene su propio progreso, racha y estadísticas.
-- **Adiviná el crack**: estilo Wordle. Una palabra por día (jugador, club o término de fútbol, de 5 a 7 letras) y 6 intentos. Verde = letra en su lugar, amarillo = está en otro lugar, gris = no está. Después del 3er intento aparece una pista. Tiene racha, % de victorias y gráfico de intentos.
-- Teclado en pantalla, tocar una casilla dos veces cambia entre horizontal y vertical, flechas para pasar de pista.
-- **Revisar** marca en rojo las letras incorrectas; **Revelar letra** ayuda (y queda registrado).
-- Cronómetro, racha de días seguidos, estadísticas y botón para compartir el resultado.
-- El progreso se guarda en el dispositivo (AsyncStorage), así se puede cerrar la app y seguir después.
+  - Teclado en pantalla; tocar una casilla dos veces cambia entre horizontal y vertical. **Revisar** marca en rojo las letras incorrectas y **Revelar letra** ayuda (y queda registrado).
+- **🎯 Adiviná el crack**: estilo Wordle. Una palabra por día (jugador, club o término de fútbol, de 5 a 7 letras) y 6 intentos. Después del 3er intento aparece una pista.
+- **🃏 ¿Quién es la carta?**: una carta de FIFA 14 a FC 26 por día y 6 intentos para adivinar el jugador. Al principio se ven 2 stats; con cada error se suma una pista: nacionalidad, posición, 2 stats más, todos los stats y, por último, la media. Al terminar se ve la foto del jugador.
+- **🕵️ Rebuscado**: 5 categorías por día (por ejemplo, "Argentinos que jugaron en el Liverpool"). Se da una sola respuesta por categoría y cuanto menos conocido es el jugador, más puntos: de 10 por el más obvio a 100 por una joya oculta.
+- **📊 Ranking**: 5 preguntas por día del tipo "¿quién es el goleador histórico n.º 28 del Manchester United?". Un intento por pregunta: el puesto exacto vale 100 puntos y va bajando según a cuántos puestos quedó el jugador nombrado.
 
-- **¿Quién es la carta?**: una carta de FIFA 14 a FC 26 por día y 6 intentos para adivinar el jugador. Al principio se ven 2 stats; con cada error se suma una pista: nacionalidad, posición, 2 stats más, todos los stats y, por último, la media. Los arqueros muestran sus stats de arquero.
+## Datos y créditos
 
-## Datos
+| Dato | Fuente | Licencia |
+| --- | --- | --- |
+| Stats de las cartas (`src/data/fifa-cards.json`) | SoFIFA, vía el dataset `mzafram2001/ea-fc` | MIT (el repositorio original ya no es público) |
+| Banderas (`src/data/flags.ts`) | [flag-icons](https://github.com/lipis/flag-icons) | MIT |
+| Fotos de jugadores (`src/data/photos.ts`) | Wikimedia Commons | CC BY / CC BY-SA / dominio público; autor y licencia de cada foto en `src/data/photo-credits.json`, y la app los muestra junto a la foto |
+| Categorías de Rebuscado (`src/data/rebuscado.json`) | Categorías de Wikipedia en inglés + Wikidata | CC BY-SA 4.0 / CC0 |
+| Rankings (`src/data/rankings.json`) | Listas de Wikipedia en inglés (noviembre de 2026) | CC BY-SA 4.0 |
+| Base de jugadores (`src/data/players.json`) | Wikipedia y Wikidata | CC BY-SA 4.0 / CC0 |
 
-Los stats de las cartas salen de [mzafram2001/ea-fc](https://github.com/mzafram2001/ea-fc) (licencia MIT, datos de SoFIFA). Para regenerar `src/data/fifa-cards.json`:
+En Rebuscado, "qué tan conocido" es un jugador se mide por la cantidad de Wikipedias (idiomas) que tienen un artículo sobre él.
+
+### Cómo regenerar los datos
+
+Los scripts están en `scripts/data-tools/` (Python 3 con `beautifulsoup4`, `lxml` y `Pillow`). Necesitan acceso a `en.wikipedia.org`, `query.wikidata.org`, `commons.wikimedia.org` y `upload.wikimedia.org`, y guardan todo en una carpeta de trabajo (`WORK`):
 
 ```bash
-git clone --depth 1 https://github.com/mzafram2001/ea-fc.git /tmp/ea-fc
-python3 scripts/build-fifa-data.py /tmp/ea-fc/data
+cd scripts/data-tools
+mkdir -p $WORK/kr $WORK/rk
+python3 kr_clubs.py $WORK        # jugadores de cada club (categorías de Wikipedia)
+python3 kr_extra_api.py $WORK    # campeones y premios
+python3 squads_html.py $WORK     # planteles de Mundiales y Copas América
+python3 rk_parse.py $WORK        # rankings de goleadores y partidos
+python3 rk_resolve.py $WORK      # identifica a los jugadores de los rankings
+python3 wd_attrs.py $WORK        # fama, nacionalidad y nombres desde Wikidata
+python3 build_games.py $WORK ../../src/data
 ```
+
+Las fotos se bajan con `match_players.py`, `photos_meta.py` y `photos_crop.py`. Los servidores de Wikimedia limitan la cantidad de pedidos, así que la descarga completa puede tardar más de una hora.
 
 ## Cómo correrla
 
 ```bash
 cd futbol-crucigrama
 npm install
-npx expo start      # escanear el QR con Expo Go en el celular
+npx expo start        # escanear el QR con Expo Go en el celular
 npx expo start --web  # o probarla en el navegador
 ```
 
-## Scripts
+## Verificaciones
 
 ```bash
-npm test            # tests del generador, navegación y rachas
+npm test            # tests de la lógica de los cinco juegos y de los datos
 npm run typecheck   # TypeScript
 npx expo lint       # ESLint
 ```
 
 ## Estructura
 
-- `App.tsx` — pantalla del juego, modales de pistas y resultado.
-- `src/data/words.ts`, `words-medio.ts`, `words-dificil.ts` — bancos de palabras y pistas de cada nivel.
-- `src/lib/generator.ts` — arma la grilla cruzando palabras.
-- `src/lib/daily.ts` — niveles y crucigrama del día a partir de la fecha.
-- `src/lib/game.ts` — lógica de navegación y verificación.
-- `src/lib/wordle.ts` — palabra del día y colores de Adiviná el crack.
-- `src/lib/cartas.ts` — carta del día, pistas, buscador y nacionalidades de ¿Quién es la carta?.
-- `src/lib/storage.ts` — progreso y estadísticas.
-- `src/components/` — grilla, teclado, encabezado, pantallas de los juegos y resultado.
+- `App.tsx` — navegación entre juegos y pantalla del crucigrama.
+- `src/lib/` — lógica sin interfaz, con sus tests:
+  - `generator.ts`, `daily.ts`, `game.ts` — crucigrama.
+  - `wordle.ts` — Adiviná el crack.
+  - `cartas.ts` — ¿Quién es la carta?
+  - `jugadores.ts` — base de jugadores y buscador de Rebuscado y Ranking.
+  - `rebuscado.ts`, `ranking.ts` — categorías, preguntas y puntajes.
+  - `storage.ts` — progreso y estadísticas.
+- `src/components/` — pantallas de cada juego (`AdivinaGame`, `CartaGame`, `RebuscadoGame`, `RankingGame`), el juego por rondas que comparten los dos últimos (`RondasGame`), buscador, teclado, grilla, barra inferior y carteles de resultado.
+- `src/data/` — bancos de palabras y datos generados.
+- `scripts/` — scripts que generan los datos.
