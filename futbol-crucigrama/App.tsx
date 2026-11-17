@@ -20,7 +20,7 @@ import Grid from './src/components/Grid';
 import Header from './src/components/Header';
 import RankingGame from './src/components/RankingGame';
 import RebuscadoGame from './src/components/RebuscadoGame';
-import Keyboard from './src/components/Keyboard';
+import Keyboard, { hasPhysicalKeyboard } from './src/components/Keyboard';
 import {
   dateKey,
   getDailyPuzzle,
@@ -72,6 +72,9 @@ export default function App() {
 const SHOW_REBUSCADO = false;
 
 type Mode = 'crucigrama' | 'adivina' | 'carta' | 'rebuscado' | 'ranking';
+
+// Alto de los botones Pistas / Revisar / Revelar más los márgenes del área de la grilla.
+const ACTIONS_HEIGHT = 84;
 
 function Game() {
   const [day, setDay] = useState(dateKey);
@@ -212,7 +215,12 @@ function DailyGame({
   onCompleted: (level: Level) => void;
 }) {
   const puzzle = useMemo(() => getDailyPuzzle(day, level), [day, level]);
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  // Pantallas bajas (notebook, celular chico): teclado compacto. Muy bajas (celular
+  // apaisado): toda la pantalla pasa a tener scroll para que nada se superponga.
+  const compact = height < 760;
+  const scroll = height < 560;
+  const [boardArea, setBoardArea] = useState<{ width: number; height: number } | null>(null);
 
   const [entries, setEntries] = useState(() => emptyEntries(puzzle));
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
@@ -394,10 +402,18 @@ function DailyGame({
   }, []);
 
   const number = puzzleNumber(day);
-  const boardSize = Math.min(width - 24, 460);
+  // La grilla usa el espacio que realmente queda libre (ancho y alto), así entra
+  // también en pantallas apaisadas o bajas como las de una notebook.
+  const fallback = Math.min(width - 24, 460);
+  const boardSize = scroll
+    ? Math.min(width - 24, 420)
+    : boardArea
+    ? Math.max(160, Math.min(boardArea.width - 24, boardArea.height - ACTIONS_HEIGHT, 460))
+    : fallback;
 
+  const Body = scroll ? ScrollView : View;
   return (
-    <View style={styles.container}>
+    <Body style={styles.container} contentContainerStyle={scroll ? styles.scrollContent : undefined}>
       <Header
         title="⚽ Crucigrama Futbolero"
         subtitle={subtitle}
@@ -411,7 +427,13 @@ function DailyGame({
         {tabs}
       </Header>
 
-      <View style={styles.boardArea}>
+      <View
+        style={[styles.boardArea, scroll && styles.boardAreaScroll]}
+        onLayout={(e) => {
+          const { width: w, height: h } = e.nativeEvent.layout;
+          setBoardArea((prev) => (prev && prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+        }}
+      >
         <Grid
           puzzle={puzzle}
           entries={entries}
@@ -430,7 +452,7 @@ function DailyGame({
       </View>
 
       <View style={styles.bottom}>
-        <View style={styles.clueBar}>
+        <View style={[styles.clueBar, compact && styles.clueBarCompact]}>
           <Pressable onPress={() => moveWord(-1)} style={styles.arrow} accessibilityLabel="Pista anterior">
             <Text style={styles.arrowText}>‹</Text>
           </Pressable>
@@ -451,7 +473,9 @@ function DailyGame({
             <Text style={styles.arrowText}>›</Text>
           </Pressable>
         </View>
-        <Keyboard onLetter={onLetter} onBackspace={onBackspace} />
+        {!hasPhysicalKeyboard(width) && (
+          <Keyboard onLetter={onLetter} onBackspace={onBackspace} compact={compact} />
+        )}
       </View>
 
       <CluesModal
@@ -474,7 +498,7 @@ function DailyGame({
         stats={stats}
         onClose={() => setShowResult(false)}
       />
-    </View>
+    </Body>
   );
 }
 
@@ -654,10 +678,14 @@ function formatCountdown(ms: number) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.pitch },
-  app: { flex: 1, backgroundColor: colors.surface },
+  safe: { flex: 1, backgroundColor: colors.pitchDark },
+  // En pantallas grandes la app se ve como una columna de celular, centrada.
+  app: { flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', backgroundColor: colors.surface },
   screen: { flex: 1 },
   container: { flex: 1, backgroundColor: colors.surface },
+  scrollContent: { flexGrow: 1 },
+  boardAreaScroll: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+  clueBarCompact: { minHeight: 50 },
   timer: { alignItems: 'flex-end' },
   timerText: { color: colors.chalk, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
   streak: { color: colors.chalk, fontSize: 13, marginTop: 2 },

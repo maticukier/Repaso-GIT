@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 import {
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -29,7 +30,7 @@ import {
 import { colors } from '../theme';
 import DailyResult from './DailyResult';
 import Header from './Header';
-import Keyboard from './Keyboard';
+import Keyboard, { hasPhysicalKeyboard } from './Keyboard';
 
 const TILE_COLORS: Record<LetterStatus, string> = {
   correct: colors.correct,
@@ -47,7 +48,7 @@ type Props = {
 export default function AdivinaGame({ day, subtitle, tabs, onFinished }: Props) {
   const { answer, clue } = useMemo(() => getDailyWord(day), [day]);
   const number = puzzleNumber(day);
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const [guesses, setGuesses] = useState<string[]>([]);
   const [current, setCurrent] = useState('');
@@ -139,7 +140,12 @@ export default function AdivinaGame({ day, subtitle, tabs, onFinished }: Props) 
 
   const statuses = useMemo(() => keyboardStatuses(guesses, answer), [guesses, answer]);
   const showHint = guesses.length >= HINT_AFTER || finished;
-  const tile = Math.min(56, Math.floor((Math.min(width, 460) - 32) / answer.length) - 6);
+  const [area, setArea] = useState<{ width: number; height: number } | null>(null);
+  const byWidth = Math.floor(((area?.width ?? Math.min(width, 460)) - 32) / answer.length) - 6;
+  // Alto disponible: 6 filas de fichas más el texto de arriba y la pista de abajo (~110 px).
+  const scroll = height < 560;
+  const byHeight = area && !scroll ? Math.floor((area.height - 110) / MAX_GUESSES) - 6 : 44;
+  const tile = Math.max(26, Math.min(56, byWidth, byHeight));
 
   const rows = Array.from({ length: MAX_GUESSES }, (_, r) => {
     if (r < guesses.length) return { text: guesses[r], score: scoreGuess(guesses[r], answer) };
@@ -147,8 +153,9 @@ export default function AdivinaGame({ day, subtitle, tabs, onFinished }: Props) 
     return { text: '', score: null };
   });
 
+  const Body = scroll ? ScrollView : View;
   return (
-    <View style={styles.container}>
+    <Body style={styles.container} contentContainerStyle={scroll ? styles.scrollContent : undefined}>
       <Header
         title="⚽ Adiviná el crack"
         subtitle={subtitle}
@@ -162,7 +169,13 @@ export default function AdivinaGame({ day, subtitle, tabs, onFinished }: Props) 
         {tabs}
       </Header>
 
-      <View style={styles.boardArea}>
+      <View
+        style={[styles.boardArea, scroll && styles.boardAreaScroll]}
+        onLayout={(e) => {
+          const { width: w, height: h } = e.nativeEvent.layout;
+          setArea((prev) => (prev && prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+        }}
+      >
         <Text style={styles.intro}>
           {answer.length} letras · jugador, club o palabra de fútbol
         </Text>
@@ -213,14 +226,17 @@ export default function AdivinaGame({ day, subtitle, tabs, onFinished }: Props) 
         </View>
       )}
 
-      <View style={styles.bottom}>
-        <Keyboard
-          onLetter={onLetter}
-          onBackspace={onBackspace}
-          onEnter={onEnter}
-          statuses={statuses}
-        />
-      </View>
+      {!hasPhysicalKeyboard(width) && (
+        <View style={styles.bottom}>
+          <Keyboard
+            onLetter={onLetter}
+            onBackspace={onBackspace}
+            onEnter={onEnter}
+            statuses={statuses}
+            compact={height < 760}
+          />
+        </View>
+      )}
 
       <DailyResult
         visible={showResult}
@@ -234,12 +250,14 @@ export default function AdivinaGame({ day, subtitle, tabs, onFinished }: Props) 
         stats={stats}
         onClose={() => setShowResult(false)}
       />
-    </View>
+    </Body>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
+  scrollContent: { flexGrow: 1 },
+  boardAreaScroll: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
   headerRight: { alignItems: 'flex-end' },
   headerStat: { color: colors.chalk, fontSize: 18, fontWeight: '700' },
   headerSmall: { color: '#BFE5CD', fontSize: 12, marginTop: 2 },

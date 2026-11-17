@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '../theme';
 
@@ -13,6 +13,8 @@ type Props = {
   // Si se pasa, aparece la tecla ENVIAR (para Adiviná el crack).
   onEnter?: () => void;
   statuses?: Record<string, KeyStatus>;
+  // Teclas más bajas para pantallas con poco alto.
+  compact?: boolean;
 };
 
 const STATUS_COLORS: Record<KeyStatus, string> = {
@@ -21,16 +23,17 @@ const STATUS_COLORS: Record<KeyStatus, string> = {
   absent: colors.absent,
 };
 
-function Keyboard({ onLetter, onBackspace, onEnter, statuses }: Props) {
+function Keyboard({ onLetter, onBackspace, onEnter, statuses, compact }: Props) {
+  const keyHeight = compact ? { height: 36 } : null;
   return (
-    <View style={styles.keyboard}>
+    <View style={[styles.keyboard, compact && styles.keyboardCompact]}>
       {ROWS.map((row, i) => (
         <View key={row} style={styles.row}>
           {i === ROWS.length - 1 && onEnter && (
             <Pressable
               onPress={onEnter}
               accessibilityLabel="Enviar"
-              style={({ pressed }) => [styles.key, styles.wide, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.key, keyHeight, styles.wide, pressed && styles.pressed]}
             >
               <Text style={styles.enterText}>ENVIAR</Text>
             </Pressable>
@@ -43,6 +46,7 @@ function Keyboard({ onLetter, onBackspace, onEnter, statuses }: Props) {
                 onPress={() => onLetter(letter)}
                 style={({ pressed }) => [
                   styles.key,
+                  keyHeight,
                   status && { backgroundColor: STATUS_COLORS[status] },
                   pressed && styles.pressed,
                 ]}
@@ -55,7 +59,7 @@ function Keyboard({ onLetter, onBackspace, onEnter, statuses }: Props) {
             <Pressable
               onPress={onBackspace}
               accessibilityLabel="Borrar"
-              style={({ pressed }) => [styles.key, styles.wide, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.key, keyHeight, styles.wide, pressed && styles.pressed]}
             >
               <Text style={styles.keyText}>⌫</Text>
             </Pressable>
@@ -68,8 +72,15 @@ function Keyboard({ onLetter, onBackspace, onEnter, statuses }: Props) {
 
 export default memo(Keyboard);
 
+// En la web con pantalla ancha (computadora) se escribe con el teclado físico,
+// así que el de pantalla se oculta para dejarle lugar a la grilla.
+export function hasPhysicalKeyboard(windowWidth: number) {
+  return Platform.OS === 'web' && windowWidth >= 900;
+}
+
 const styles = StyleSheet.create({
   keyboard: { gap: 6, paddingHorizontal: 4 },
+  keyboardCompact: { gap: 4 },
   row: { flexDirection: 'row', justifyContent: 'center', gap: 5 },
   key: {
     flex: 1,
