@@ -7,7 +7,7 @@ App de celular (Expo / React Native) con cinco juegos de fútbol que se renuevan
 - **🧩 Crucigrama**: tres por día.
   - **Fácil** (11×11): términos de fútbol, cracks y clubes conocidos.
   - **Medio** (11×11): clubes, estadios, selecciones y jugadores.
-  - **Difícil** (12×12): apodos, leyendas, clubes por su sobrenombre e historia.
+  - **Difícil** (18×18, unas 30 palabras): apodos, leyendas, clubes por su sobrenombre e historia.
   - Teclado en pantalla; tocar una casilla dos veces cambia entre horizontal y vertical. **Revisar** marca en rojo las letras incorrectas y **Revelar letra** ayuda (y queda registrado).
 - **🎯 Adiviná el crack**: estilo Wordle. Una palabra por día (jugador, club o término de fútbol, de 5 a 7 letras) y 6 intentos. Después del 3er intento aparece una pista.
 - **🃏 ¿Quién es la carta?**: una carta de FIFA 14 a FC 26 por día y 6 intentos para adivinar el jugador. Al principio se ven 2 stats; con cada error se suma una pista: nacionalidad, posición, 2 stats más, todos los stats y, por último, la media. Al terminar se ve la foto del jugador.
