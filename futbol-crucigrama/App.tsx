@@ -14,7 +14,7 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import AdivinaGame from './src/components/AdivinaGame';
-import BottomNav, { type NavItem } from './src/components/BottomNav';
+import GameMenu, { MenuContext, type MenuItem } from './src/components/GameMenu';
 import CartaGame from './src/components/CartaGame';
 import Grid from './src/components/Grid';
 import Header from './src/components/Header';
@@ -56,7 +56,6 @@ import {
 } from './src/lib/storage';
 import { RANKING_ROUNDS } from './src/lib/ranking';
 import { ROUNDS } from './src/lib/rebuscado';
-import { useTyping } from './src/lib/teclado';
 import { colors } from './src/theme';
 
 export default function App() {
@@ -126,7 +125,8 @@ function Game() {
   const onRebuscadoFinished = useCallback(() => markFinished('rebuscado'), [markFinished]);
   const onRankingFinished = useCallback(() => markFinished('ranking'), [markFinished]);
 
-  const items: NavItem<Mode>[] = [
+  const [menuOpen, setMenuOpen] = useState(false);
+  const items: MenuItem<Mode>[] = [
     { id: 'crucigrama', icon: '🧩', label: 'Crucigrama', done: LEVELS.every((l) => done[l.id]) },
     { id: 'adivina', icon: '🎯', label: 'Adiviná', done: !!finished.adivina },
     { id: 'carta', icon: '🃏', label: 'La carta', done: !!finished.carta },
@@ -138,8 +138,6 @@ function Game() {
   ];
 
   const subtitle = `#${puzzleNumber(day)} · ${formatDay(day)}`;
-  // Mientras se escribe con el teclado del celular, la barra de abajo se oculta para dejar lugar.
-  const typing = useTyping();
 
   let screen: ReactNode;
   if (mode === 'ranking') {
@@ -196,11 +194,20 @@ function Game() {
     );
   }
 
+  const menu = { open: () => setMenuOpen(true), pending: items.filter((i) => !i.done).length };
   return (
+    <MenuContext.Provider value={menu}>
     <View style={styles.app}>
       <View style={styles.screen}>{screen}</View>
-      {!typing && <BottomNav items={items} active={mode} onChange={setMode} />}
+      <GameMenu
+        visible={menuOpen}
+        items={items}
+        active={mode}
+        onChange={setMode}
+        onClose={() => setMenuOpen(false)}
+      />
     </View>
+    </MenuContext.Provider>
   );
 }
 
