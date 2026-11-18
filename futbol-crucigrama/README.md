@@ -1,13 +1,13 @@
 # ⚽ Crucigrama Futbolero
 
-App de celular (Expo / React Native) con cinco juegos de fútbol que se renuevan cada día. Todos los jugadores reciben los mismos juegos: se generan de forma determinística a partir de la fecha. El progreso, las rachas y las estadísticas se guardan en el dispositivo (AsyncStorage).
+App de celular (Expo / React Native) con cinco juegos de fútbol que se renuevan cada día. Todos los jugadores reciben los mismos juegos: se generan de forma determinística a partir de la fecha. El progreso, las rachas y las estadísticas se guardan en el dispositivo (AsyncStorage) y, si el jugador entra con Google desde la web, también en la nube (Supabase).
 
 ## Los juegos
 
-- **🧩 Crucigrama**: tres por día.
-  - **Fácil** (11×11): términos de fútbol, cracks y clubes conocidos.
-  - **Medio** (11×11): clubes, estadios, selecciones y jugadores.
-  - **Difícil** (18×18, unas 30 palabras): apodos, leyendas, clubes por su sobrenombre e historia.
+- **🧩 Crucigrama**: dos por día, de unas 30 palabras en una grilla de hasta 18×18.
+  - **Fácil**: términos de fútbol, cracks y clubes conocidos.
+  - **Difícil**: apodos, leyendas, clubes por su sobrenombre, estadios e historia.
+  - Para las tablas, el tiempo suma 30 s por cada letra revelada y 10 s por cada Revisar.
   - Teclado en pantalla; tocar una casilla dos veces cambia entre horizontal y vertical. **Revisar** marca en rojo las letras incorrectas y **Revelar letra** ayuda (y queda registrado).
 - **🎯 Adiviná el crack**: estilo Wordle. Una palabra por día (jugador, club o término de fútbol, de 5 a 7 letras) y 6 intentos. Después del 3er intento aparece una pista.
 - **🃏 ¿Quién es la carta?**: una carta de FIFA 14 a FC 26 por día y 6 intentos para adivinar el jugador. Al principio se ven 2 stats; con cada error se suma una pista: nacionalidad, posición, 2 stats más, todos los stats y, por último, la media. Al terminar se ve la foto del jugador.
@@ -47,6 +47,15 @@ python3 build_games.py $WORK ../../src/data
 
 Las fotos se bajan con `match_players.py`, `photos_meta.py` y `photos_crop.py`. Los servidores de Wikimedia limitan la cantidad de pedidos, así que la descarga completa puede tardar más de una hora.
 
+## Cuentas y nube (Supabase)
+
+- `src/lib/supabase.ts`: cliente de Supabase. El inicio de sesión con Google solo está activo en la web.
+- `src/lib/sync.ts`: sube cada cambio del progreso a la tabla `user_kv` y cada partida terminada a `results`. Al iniciar sesión mezcla lo del dispositivo con lo de la nube (gana lo más reciente), así se puede seguir desde otro celular.
+- `src/components/Account.tsx`: sesión y botón "Entrar con Google" en el menú.
+- `supabase/migrations/`: tablas y permisos (cada usuario solo puede leer y escribir sus datos).
+
+Para que funcione el login hay que activar Google en Supabase (Authentication → Providers → Google) con un "OAuth client ID" de Google Cloud, cuyo redirect URI es `https://<proyecto>.supabase.co/auth/v1/callback`.
+
 ## Cómo correrla
 
 ```bash
@@ -74,6 +83,7 @@ npx expo lint       # ESLint
   - `jugadores.ts` — base de jugadores y buscador de Rebuscado y Ranking.
   - `rebuscado.ts`, `ranking.ts` — categorías, preguntas y puntajes.
   - `storage.ts` — progreso y estadísticas.
-- `src/components/` — pantallas de cada juego (`AdivinaGame`, `CartaGame`, `RebuscadoGame`, `RankingGame`), el juego por rondas que comparten los dos últimos (`RondasGame`), buscador, teclado, grilla, barra inferior y carteles de resultado.
+  - `supabase.ts`, `sync.ts` — cuenta y guardado en la nube.
+- `src/components/` — pantallas de cada juego (`AdivinaGame`, `CartaGame`, `RebuscadoGame`, `RankingGame`), el juego por rondas que comparten los dos últimos (`RondasGame`), buscador, teclado, grilla, menú de juegos y cuenta (`GameMenu`, `Account`) y carteles de resultado.
 - `src/data/` — bancos de palabras y datos generados.
 - `scripts/` — scripts que generan los datos.

@@ -10,6 +10,7 @@ import {
   type PuntosGame,
   type PuntosStats,
   recordPuntosResult,
+  reportResult,
   savePuntosProgress,
 } from '../lib/storage';
 import { scrollToTop, useTyping } from '../lib/teclado';
@@ -100,6 +101,7 @@ export default function RondasGame<T>({
     if (next.length === rounds.length) {
       const finalScore = next.reduce<number>((sum, p, i) => sum + score(rounds[i], p), 0);
       onFinished();
+      reportResult({ game, variant: '', day, score: finalScore, details: { picks: next } });
       recordPuntosResult(game, day, finalScore).then(setStats);
     }
   };

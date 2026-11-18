@@ -1,8 +1,9 @@
 import { createContext, useContext } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../theme';
+import { useAccount } from './Account';
 
 export type MenuItem<T extends string> = {
   id: T;
@@ -46,6 +47,7 @@ type Props<T extends string> = {
 // Panel lateral con la lista de juegos; marca con ✓ los que ya se jugaron hoy.
 export default function GameMenu<T extends string>({ visible, items, active, onChange, onClose }: Props<T>) {
   const insets = useSafeAreaInsets();
+  const account = useAccount();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
@@ -56,6 +58,7 @@ export default function GameMenu<T extends string>({ visible, items, active, onC
               <Text style={styles.close}>✕</Text>
             </Pressable>
           </View>
+          {account && <AccountBox />}
           {items.map((item) => {
             const selected = item.id === active;
             return (
@@ -84,7 +87,91 @@ export default function GameMenu<T extends string>({ visible, items, active, onC
   );
 }
 
+function AccountBox() {
+  const account = useAccount()!;
+  if (!account.available) {
+    return (
+      <View style={styles.account}>
+        <Text style={styles.accountHint}>Para guardar tus resultados con una cuenta, entrá desde la página web.</Text>
+      </View>
+    );
+  }
+  if (!account.session) {
+    return (
+      <View style={styles.account}>
+        <Pressable
+          onPress={account.signIn}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.google, pressed && styles.pressed]}
+        >
+          <Text style={styles.googleG}>G</Text>
+          <Text style={styles.googleText}>Entrar con Google</Text>
+        </Pressable>
+        <Text style={styles.accountHint}>Guardá tus resultados y seguí desde cualquier dispositivo.</Text>
+      </View>
+    );
+  }
+  const status =
+    account.sync === 'syncing'
+      ? 'Sincronizando…'
+      : account.sync === 'error'
+        ? 'No se pudo sincronizar: se reintenta solo'
+        : '✓ Resultados guardados en tu cuenta';
+  return (
+    <View style={[styles.account, styles.accountRow]}>
+      {account.avatar ? (
+        <Image source={{ uri: account.avatar }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarEmpty]}>
+          <Text style={styles.avatarLetter}>{(account.name ?? '?')[0]}</Text>
+        </View>
+      )}
+      <View style={styles.accountInfo}>
+        <Text style={styles.accountName} numberOfLines={1}>
+          {account.name}
+        </Text>
+        <Text style={[styles.accountStatus, account.sync === 'error' && styles.accountError]}>{status}</Text>
+        <Pressable onPress={account.signOut} hitSlop={6}>
+          <Text style={styles.signOut}>Cerrar sesión</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  account: {
+    backgroundColor: colors.chalk,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D5E2D9',
+    padding: 12,
+    marginBottom: 8,
+    gap: 8,
+  },
+  accountRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  accountHint: { fontSize: 12, color: colors.textMuted },
+  google: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#C9D6CE',
+    paddingVertical: 10,
+    backgroundColor: colors.chalk,
+  },
+  googleG: { fontSize: 17, fontWeight: '900', color: '#4285F4' },
+  googleText: { fontSize: 15, fontWeight: '700', color: colors.text },
+  avatar: { width: 44, height: 44, borderRadius: 22 },
+  avatarEmpty: { backgroundColor: colors.cellWord, alignItems: 'center', justifyContent: 'center' },
+  avatarLetter: { fontSize: 18, fontWeight: '800', color: colors.pitchDark },
+  accountInfo: { flex: 1, gap: 2 },
+  accountName: { fontSize: 15, fontWeight: '800', color: colors.text },
+  accountStatus: { fontSize: 12, color: colors.correct, fontWeight: '600' },
+  accountError: { color: colors.present },
+  signOut: { fontSize: 13, color: colors.pitchDark, fontWeight: '700', marginTop: 2 },
   button: {
     width: 40,
     height: 40,

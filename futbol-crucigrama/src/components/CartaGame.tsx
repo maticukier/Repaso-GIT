@@ -24,6 +24,7 @@ import {
   loadCartaProgress,
   loadWordleStats,
   recordWordleResult,
+  reportResult,
   saveCartaProgress,
   type WordleStats,
 } from '../lib/storage';
@@ -100,6 +101,7 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
       setFinished(true);
       setWon(isWin);
       onFinished();
+      reportResult({ game: 'carta', variant: '', day, score: isWin ? next.length : MAX_CARD_GUESSES + 1, details: { guesses: next, won: isWin, player: player.id } });
       recordWordleResult(day, isWin, next.length, CARTA_STATS_KEY).then((s) => {
         setStats(s);
         setTimeout(() => setShowResult(true), 700);

@@ -15,6 +15,7 @@ import {
   loadWordleProgress,
   loadWordleStats,
   recordWordleResult,
+  reportResult,
   saveWordleProgress,
   type WordleStats,
 } from '../lib/storage';
@@ -111,6 +112,7 @@ export default function AdivinaGame({ day, subtitle, tabs, onFinished }: Props) 
       setWon(isWin);
       setMessage(isWin ? '¡Golazo!' : `Era ${answer}`);
       onFinished();
+      reportResult({ game: 'adivina', variant: '', day, score: isWin ? next.length : MAX_GUESSES + 1, details: { guesses: next, won: isWin } });
       recordWordleResult(day, isWin, next.length).then((s) => {
         setStats(s);
         setTimeout(() => setShowResult(true), 900);
