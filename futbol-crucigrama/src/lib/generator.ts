@@ -159,7 +159,7 @@ function buildLayout(entries: WordEntry[], rng: Rng, options: GeneratorOptions):
 
   let pending = ordered.filter((e) => e !== first && e.answer.length <= options.maxSize);
   // Varias pasadas: una palabra que no entró antes puede entrar después.
-  for (let pass = 0; pass < 3 && layout.placements.length < options.targetWords; pass++) {
+  for (let pass = 0; pass < 6 && layout.placements.length < options.targetWords; pass++) {
     const remaining: WordEntry[] = [];
     for (const entry of pending) {
       if (layout.placements.length >= options.targetWords) break;
@@ -242,7 +242,7 @@ export function generatePuzzle(
   let best: Layout | null = null;
   let bestQuality = -Infinity;
   for (let attempt = 0; attempt < opts.attempts; attempt++) {
-    const candidates = shuffle(bank, rng).slice(0, opts.targetWords * 3);
+    const candidates = shuffle(bank, rng).slice(0, opts.targetWords * 5);
     const layout = buildLayout(candidates, rng, opts);
     const quality = layoutQuality(layout);
     if (quality > bestQuality) {

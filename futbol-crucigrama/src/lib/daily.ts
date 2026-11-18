@@ -14,21 +14,23 @@ type LevelConfig = {
   seed: string;
 };
 
+// Unas 30 palabras por crucigrama en una grilla de 18x18.
 export const LEVELS: LevelConfig[] = [
   {
     id: 'facil',
     label: 'Fácil',
     bank: WORDS,
-    options: { maxSize: 12, targetWords: 14 },
-    seed: 'futbol-crucigrama:v2',
+    options: { maxSize: 18, targetWords: 30, attempts: 30 },
+    seed: 'futbol-crucigrama:v3',
   },
-  // El difícil mezcla clubes, estadios y jugadores con apodos e historia, en una grilla más grande.
+  // El difícil mezcla clubes, estadios y jugadores con apodos e historia. Las palabras de
+  // más de 9 letras quedan afuera para que entren unas 30 en la grilla.
   {
     id: 'dificil',
     label: 'Difícil',
-    bank: [...WORDS_DIFICIL, ...WORDS_MEDIO],
-    options: { maxSize: 13, targetWords: 18 },
-    seed: 'futbol-crucigrama:dificil:v2',
+    bank: [...WORDS_DIFICIL, ...WORDS_MEDIO].filter((w) => w.answer.length <= 9),
+    options: { maxSize: 18, targetWords: 30, attempts: 30 },
+    seed: 'futbol-crucigrama:dificil:v3',
   },
 ];
 

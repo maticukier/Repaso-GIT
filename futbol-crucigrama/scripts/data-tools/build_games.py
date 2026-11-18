@@ -57,6 +57,12 @@ def nat_qids(q):
 def nat_codes(q):
     return {QID_TO_CODE[v] for v in nat_qids(q) if v in QID_TO_CODE}
 
+def nat_codes_any(q):
+    # Cualquier nacionalidad: la deportiva y todas las ciudadanías (para aceptar respuestas).
+    a = attrs.get(q, {})
+    vals = (a.get('sport') or []) + (a.get('cit') or [])
+    return {QID_TO_CODE[ALIAS.get(v, v)] for v in vals if ALIAS.get(v, v) in QID_TO_CODE}
+
 def fame(q):
     return attrs.get(q, {}).get('sl', 0)
 
@@ -82,7 +88,13 @@ def alt_name(q):
     return None
 
 # --- Categorías de Rebuscado ------------------------------------------------
-clubs = {cid: dict(c, set={q for q in c['members'] if is_person(q)}) for cid, c in members['clubs'].items() if c['members']}
+# Dos fuentes por club: categorías de Wikipedia y P54 de Wikidata. Alcanza con una.
+wd_clubs = load('kr', 'wd-clubs.json') if os.path.exists(os.path.join(SP, 'kr', 'wd-clubs.json')) else {}
+clubs = {}
+for cid, c in members['clubs'].items():
+    both = set(c['members']) | set(wd_clubs.get(cid, {}).get('members', []))
+    if both:
+        clubs[cid] = dict(c, set={q for q in both if is_person(q)})
 awards = {k: {q for q in v['members'] if is_person(q)} for k, v in members.get('awards', {}).items() if v['members']}
 
 TIER1 = {'realmadrid', 'barcelona', 'atletico', 'manutd', 'liverpool', 'chelsea', 'arsenal', 'mancity', 'tottenham',
@@ -92,8 +104,11 @@ TIER1 = {'realmadrid', 'barcelona', 'atletico', 'manutd', 'liverpool', 'chelsea'
 categories = []
 seen_titles = set()
 
-def add(title, group, answers, min_n=5, max_n=70, min_famous=3, famous_at=30):
+def add(title, group, answers, min_n=5, max_n=70, min_famous=3, famous_at=30, also=()):
+    # `also`: respuestas que también se aceptan (por ejemplo, por doble nacionalidad)
+    # pero que no se muestran en la lista de la categoría.
     answers = sorted(set(answers), key=lambda q: -fame(q))
+    also = sorted(set(also) - set(answers), key=lambda q: -fame(q))
     if not (min_n <= len(answers) <= max_n):
         return False
     if sum(1 for q in answers if fame(q) >= famous_at) < min_famous:
@@ -101,42 +116,50 @@ def add(title, group, answers, min_n=5, max_n=70, min_famous=3, famous_at=30):
     if title in seen_titles:
         return False
     seen_titles.add(title)
-    categories.append({'t': title, 'g': group, 'a': answers})
+    categories.append({'t': title, 'g': group, 'a': answers, 'x': also})
     return True
 
-by_nat = {}
+by_nat, by_nat_any = {}, {}
 for cid, c in clubs.items():
     for q in c['set']:
         for code in nat_codes(q):
             by_nat.setdefault((cid, code), set()).add(q)
+        for code in nat_codes_any(q):
+            by_nat_any.setdefault((cid, code), set()).add(q)
 
-# 1) Nacionalidad x club (solo extranjeros)
+BIG_ARG = {'boca', 'river', 'racing', 'independiente', 'sanlorenzo'}
+
+# 1) Nacionalidad x club (solo extranjeros). Hace falta que haya varios conocidos para que sea jugable.
 for cid, c in clubs.items():
     for code, (_, dem) in NATIONS.items():
         if code == c['country']:
             continue
+        if c['country'] == 'ARG' and cid not in BIG_ARG:
+            continue
         arg = code == 'ARG' or c['country'] == 'ARG'
         add(f"{dem} que pasaron por {c['es']}", 'arg' if arg else 'nac', by_nat.get((cid, code), ()),
-            famous_at=20 if c['country'] in ('ARG', 'BRA', 'URU', 'CHI') else 30)
+            min_famous=3, famous_at=30 if c['country'] in ('ARG', 'BRA', 'URU', 'CHI') else 40,
+            also=by_nat_any.get((cid, code), ()))
 
 # 2) Pasaron por los dos clubes
 for a, b in combinations(clubs, 2):
     both_arg = clubs[a]['country'] == 'ARG' and clubs[b]['country'] == 'ARG'
-    if not ((a in TIER1 and b in TIER1) or both_arg):
+    # Clubes grandes de Europa entre sí, o un grande argentino con otro club argentino.
+    if not ((a in TIER1 and b in TIER1) or (both_arg and (a in BIG_ARG or b in BIG_ARG))):
         continue
     add(f"Pasaron por {clubs[a]['es']} y por {clubs[b]['es']}", 'par', clubs[a]['set'] & clubs[b]['set'],
-        min_n=4, max_n=60, famous_at=20 if both_arg else 30)
+        min_n=5, max_n=150, min_famous=3, famous_at=30 if both_arg else 40)
 
 # 3) Campeones y premios
-BY_NATION = {
-    'mundial': 'campeones del mundo', 'champions': 'campeones de la Champions League',
-    'libertadores': 'campeones de la Copa Libertadores', 'copaamerica': 'campeones de la Copa América',
-    'eurocopa': 'campeones de la Eurocopa',
-}
+# Solo títulos con listas completas. Las categorías de campeones de Libertadores,
+# Champions, Copa América y Eurocopa de Wikipedia omiten jugadores (por ejemplo,
+# el Pity Martínez en la Libertadores 2018), así que no se usan.
+BY_NATION = {'mundial': 'campeones del mundo'}
 for key, phrase in BY_NATION.items():
     for code, (_, dem) in NATIONS.items():
         ans = [q for q in awards.get(key, ()) if code in nat_codes(q)]
-        add(f'{dem} {phrase}', 'arg' if code == 'ARG' else 'tit', ans, max_n=90)
+        also = [q for q in awards.get(key, ()) if code in nat_codes_any(q)]
+        add(f'{dem} {phrase}', 'arg' if code == 'ARG' else 'tit', ans, max_n=90, also=also)
 ALONE = {
     'balondeoro': 'Ganadores del Balón de Oro', 'pichichi': 'Ganadores del Pichichi (goleador de la liga española)',
     'sudamericano': 'Elegidos Futbolista del Año de Sudamérica', 'goldenboy': 'Ganadores del premio Golden Boy',
@@ -146,8 +169,6 @@ for key, title in ALONE.items():
     add(title, 'tit', awards.get(key, ()), max_n=90)
 BY_CLUB = {
     'mundial': 'Campeones del mundo que pasaron por', 'balondeoro': 'Ganadores del Balón de Oro que pasaron por',
-    'champions': 'Campeones de la Champions League que pasaron por',
-    'libertadores': 'Campeones de la Copa Libertadores que pasaron por',
 }
 EUROPE = {'ENG', 'ESP', 'ITA', 'GER', 'FRA', 'NED', 'POR'}
 for key, phrase in BY_CLUB.items():
@@ -171,12 +192,15 @@ for key, titles in sorted(squad_titles(SP).items()):
     kind, year = m.group(1), m.group(2)
     if kind == 'copaamerica' and code not in SOUTH_AMERICA | {'MEX'}:
         continue
-    qs = [en_to_qid[t] for t in titles if t in en_to_qid]
-    # Se descarta a quien jugó para otra selección (por ejemplo, tras cambiar de nacionalidad deportiva).
-    ans = [q for q in qs if is_person(q) and (not attrs[q].get('sport') or code in nat_codes(q))]
+    # Todos los convocados cuentan. Si alguno no se pudo identificar, la categoría quedaría
+    # incompleta y se descarta.
+    if any(t not in en_to_qid for t in titles):
+        print('  plantel incompleto, se descarta:', key)
+        continue
+    ans = [en_to_qid[t] for t in titles]
     dem = NATIONS[code][1]
     where = f'al Mundial {year}' if kind == 'mundial' else f'a la Copa América {year}'
-    add(f'{dem} convocados {where}', 'arg' if code == 'ARG' else 'tit', ans, min_n=18, max_n=28, famous_at=25)
+    add(f'{dem} convocados {where}', 'arg' if code == 'ARG' else 'tit', ans, min_n=18, max_n=30, famous_at=25)
 
 # --- Rankings ---------------------------------------------------------------
 def row_key(r):
@@ -202,13 +226,19 @@ for l in lists:
     ranking_out.append({'id': l['id'], 't': l['title'], 'q': l['question'], 'u': l['unit'], 'targets': targets, 'r': out_rows})
 
 # --- Tabla de jugadores -----------------------------------------------------
-used = {q for c in categories for q in c['a']} | set(ranking_players)
+used = {q for c in categories for q in c['a'] + c['x']} | set(ranking_players)
 country_qids = sorted({v for q in used if not q.startswith('x:') for v in nat_qids(q)[:1]})
+# Nombres de países en español (API de Wikidata, de a 50).
+import urllib.parse
 labels = {}
-for i in range(0, len(country_qids), 300):
-    part = country_qids[i:i + 300]
-    for r in wm.sparql('SELECT ?c ?l WHERE { VALUES ?c { %s } ?c rdfs:label ?l FILTER(lang(?l) = "es") }' % ' '.join('wd:' + c for c in part)):
-        labels[r['c']['value'].rsplit('/', 1)[1]] = r['l']['value']
+for i in range(0, len(country_qids), 50):
+    part = country_qids[i:i + 50]
+    url = ('https://www.wikidata.org/w/api.php?format=json&action=wbgetentities&props=labels&languages=es&'
+           + urllib.parse.urlencode({'ids': '|'.join(part)}))
+    for q, ent in json.loads(wm.fetch(url, min_gap=18.0)).get('entities', {}).items():
+        l = ent.get('labels', {}).get('es', {}).get('value')
+        if l:
+            labels[q] = l
 countries = sorted(set(labels.values()))
 country_index = {c: i for i, c in enumerate(countries)}
 
@@ -236,7 +266,8 @@ def dump(name, obj):
 
 kb = [
     dump('players.json', {'countries': countries, 'p': players}),
-    dump('rebuscado.json', {'c': [{'t': c['t'], 'g': c['g'], 'a': [index[q] for q in c['a']]} for c in categories]}),
+    dump('rebuscado.json', {'c': [dict({'t': c['t'], 'g': c['g'], 'a': [index[q] for q in c['a']]},
+                                      **({'x': [index[q] for q in c['x']]} if c['x'] else {})) for c in categories]}),
     dump('rankings.json', {'l': [dict(l, r=[[index[pid], v] for pid, v in l['r']]) for l in ranking_out]}),
 ]
 with open(os.path.join(SP, 'build-ids.json'), 'w', encoding='utf-8') as f:
@@ -246,11 +277,16 @@ from collections import Counter
 print(f'{len(players)} jugadores ({kb[0]} KB), {len(categories)} categorías ({kb[1]} KB), {len(ranking_out)} rankings ({kb[2]} KB)')
 print('grupos:', dict(Counter(c['g'] for c in categories)))
 print('preguntas de ranking posibles:', sum(len(l['targets']) for l in ranking_out))
-for probe in ('Argentinos que pasaron por el Liverpool', 'Pasaron por Boca y por River', 'Argentinos campeones del mundo',
-              'Ingleses que pasaron por el Real Madrid', 'Uruguayos que pasaron por el Real Madrid', 'Argentinos convocados al Mundial 2006',
-              'Ganadores del Balón de Oro', 'Brasileños que pasaron por el Barcelona', 'Campeones del mundo que pasaron por Boca'):
-    c = next((c for c in categories if c['t'] == probe), None)
-    if c:
-        print(f"\n{probe} ({len(c['a'])}):", ', '.join(f'{title_name(q)} {fame(q)}' for q in c['a'][:45]))
-    else:
-        print(f'\n{probe}: NO GENERADA')
+import collections
+kinds = collections.Counter(re.sub(r' (el|la|al|a la|por|de|del) .*| (19|20)\d\d$', '', c['t']).split(' que ')[-1][:30] for c in categories)
+by_title = {c['t']: c for c in categories}
+def show(t, n=60):
+    c = by_title.get(t)
+    if not c:
+        print(f'\n{t}: NO GENERADA'); return
+    extra = f" | también aceptadas: {', '.join(title_name(q) for q in c['x'][:12])}" if c['x'] else ''
+    print(f"\n{t} ({len(c['a'])}): " + ', '.join(title_name(q) for q in c['a'][:n]) + extra)
+for t in ('Argentinos que pasaron por el Liverpool', 'Pasaron por Boca y por River', 'Argentinos que pasaron por el Real Madrid',
+          'Argentinos convocados a la Copa América 2021', 'Argentinos convocados al Mundial 2022', 'Brasileños campeones del mundo',
+          'Italianos que pasaron por Boca', 'Uruguayos que pasaron por Boca', 'Argentinos que pasaron por el Barcelona'):
+    show(t)

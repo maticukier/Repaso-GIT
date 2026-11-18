@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
@@ -24,9 +24,11 @@ import {
   loadCartaProgress,
   loadWordleStats,
   recordWordleResult,
+  reportResult,
   saveCartaProgress,
   type WordleStats,
 } from '../lib/storage';
+import { scrollToTop, useTyping } from '../lib/teclado';
 import { colors } from '../theme';
 import DailyResult from './DailyResult';
 import Flag from './Flag';
@@ -50,6 +52,8 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
   const [query, setQuery] = useState('');
   const [stats, setStats] = useState<WordleStats>(EMPTY_WORDLE_STATS);
   const [showResult, setShowResult] = useState(false);
+  const guessRef = useRef<View>(null);
+  const typing = useTyping();
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +101,7 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
       setFinished(true);
       setWon(isWin);
       onFinished();
+      reportResult({ game: 'carta', variant: '', day, score: isWin ? next.length : MAX_CARD_GUESSES + 1, details: { guesses: next, won: isWin, player: player.id } });
       recordWordleResult(day, isWin, next.length, CARTA_STATS_KEY).then((s) => {
         setStats(s);
         setTimeout(() => setShowResult(true), 700);
@@ -124,7 +129,10 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
         {tabs}
       </Header>
 
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.content, typing && styles.contentTyping]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.card} accessibilityLabel="Carta del jugador">
           <View style={styles.cardTop}>
             <View style={styles.cardSide}>
@@ -199,7 +207,7 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
             </Pressable>
           </View>
         ) : (
-          <View style={styles.guessArea}>
+          <View style={styles.guessArea} ref={guessRef}>
             <Text style={styles.attempt}>
               Intento {guesses.length + 1} de {MAX_CARD_GUESSES}
               {lastWasMiss && misses < NEW_CLUE.length ? ` · ${NEW_CLUE[misses]}` : ''}
@@ -213,6 +221,7 @@ export default function CartaGame({ day, subtitle, tabs, onFinished }: Props) {
               autoCapitalize="words"
               style={styles.input}
               accessibilityLabel="Buscar jugador"
+              onFocus={() => scrollToTop(guessRef.current)}
             />
             {suggestions.map((s) => (
               <Pressable
@@ -293,6 +302,7 @@ const styles = StyleSheet.create({
   headerStat: { color: colors.chalk, fontSize: 18, fontWeight: '700' },
   headerSmall: { color: '#BFE5CD', fontSize: 12, marginTop: 2 },
   content: { padding: 16, gap: 14, alignItems: 'center' },
+  contentTyping: { paddingBottom: 420 },
   card: {
     width: 250,
     borderRadius: 18,

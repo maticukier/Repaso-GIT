@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { colors } from '../theme';
+import { MenuButton } from './GameMenu';
 
 type Props = {
   title: string;
@@ -15,6 +16,7 @@ export default function Header({ title, subtitle, right, children }: Props) {
   return (
     <View style={styles.wrap}>
       <View style={styles.header}>
+        <MenuButton />
         <View style={styles.titles}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
@@ -32,10 +34,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingLeft: 8,
+    paddingRight: 16,
     paddingVertical: 10,
   },
-  titles: { flexShrink: 1 },
+  titles: { flex: 1, flexShrink: 1 },
   title: { color: colors.chalk, fontSize: 20, fontWeight: '800' },
   subtitle: { color: '#BFE5CD', fontSize: 13, marginTop: 2 },
 });

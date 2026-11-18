@@ -14,13 +14,14 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import AdivinaGame from './src/components/AdivinaGame';
-import BottomNav, { type NavItem } from './src/components/BottomNav';
+import { AccountProvider, useAccount } from './src/components/Account';
+import GameMenu, { MenuContext, type MenuItem } from './src/components/GameMenu';
 import CartaGame from './src/components/CartaGame';
 import Grid from './src/components/Grid';
 import Header from './src/components/Header';
 import RankingGame from './src/components/RankingGame';
 import RebuscadoGame from './src/components/RebuscadoGame';
-import Keyboard from './src/components/Keyboard';
+import Keyboard, { hasPhysicalKeyboard } from './src/components/Keyboard';
 import {
   dateKey,
   getDailyPuzzle,
@@ -48,6 +49,10 @@ import {
   loadProgress,
   loadStats,
   recordWin,
+  reportResult,
+  crosswordScore,
+  REVEAL_PENALTY,
+  CHECK_PENALTY,
   loadCartaProgress,
   loadPuntosProgress,
   loadWordleProgress,
@@ -63,15 +68,26 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.safe} edges={['top']}>
         <StatusBar style="light" />
-        <Game />
+        <AccountProvider>
+          <GameWithAccount />
+        </AccountProvider>
       </SafeAreaView>
     </SafeAreaProvider>
   );
 }
 
-const SHOW_REBUSCADO = false;
+const SHOW_REBUSCADO = true;
 
 type Mode = 'crucigrama' | 'adivina' | 'carta' | 'rebuscado' | 'ranking';
+
+// Alto de los botones Pistas / Revisar / Revelar más los márgenes del área de la grilla.
+const ACTIONS_HEIGHT = 84;
+
+// Cuando la sincronización trae datos de otro dispositivo, los juegos se recargan con ellos.
+function GameWithAccount() {
+  const account = useAccount();
+  return <Game key={account?.version ?? 0} />;
+}
 
 function Game() {
   const [day, setDay] = useState(dateKey);
@@ -122,7 +138,8 @@ function Game() {
   const onRebuscadoFinished = useCallback(() => markFinished('rebuscado'), [markFinished]);
   const onRankingFinished = useCallback(() => markFinished('ranking'), [markFinished]);
 
-  const items: NavItem<Mode>[] = [
+  const [menuOpen, setMenuOpen] = useState(false);
+  const items: MenuItem<Mode>[] = [
     { id: 'crucigrama', icon: '🧩', label: 'Crucigrama', done: LEVELS.every((l) => done[l.id]) },
     { id: 'adivina', icon: '🎯', label: 'Adiviná', done: !!finished.adivina },
     { id: 'carta', icon: '🃏', label: 'La carta', done: !!finished.carta },
@@ -190,11 +207,20 @@ function Game() {
     );
   }
 
+  const menu = { open: () => setMenuOpen(true), pending: items.filter((i) => !i.done).length };
   return (
+    <MenuContext.Provider value={menu}>
     <View style={styles.app}>
       <View style={styles.screen}>{screen}</View>
-      <BottomNav items={items} active={mode} onChange={setMode} />
+      <GameMenu
+        visible={menuOpen}
+        items={items}
+        active={mode}
+        onChange={setMode}
+        onClose={() => setMenuOpen(false)}
+      />
     </View>
+    </MenuContext.Provider>
   );
 }
 
@@ -212,10 +238,16 @@ function DailyGame({
   onCompleted: (level: Level) => void;
 }) {
   const puzzle = useMemo(() => getDailyPuzzle(day, level), [day, level]);
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  // Pantallas bajas (notebook, celular chico): teclado compacto. Muy bajas (celular
+  // apaisado): toda la pantalla pasa a tener scroll para que nada se superponga.
+  const compact = height < 760;
+  const scroll = height < 560;
+  const [boardArea, setBoardArea] = useState<{ width: number; height: number } | null>(null);
 
   const [entries, setEntries] = useState(() => emptyEntries(puzzle));
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const [checks, setChecks] = useState(0);
   const [wrong, setWrong] = useState<Set<string>>(new Set());
   const [elapsed, setElapsed] = useState(0);
   const [completed, setCompleted] = useState(false);
@@ -238,6 +270,7 @@ function DailyGame({
         setRevealed(new Set(progress.revealed));
         setElapsed(progress.elapsed);
         setCompleted(progress.completed);
+        setChecks(progress.checks ?? 0);
       }
       setStats(savedStats);
       setLoaded(true);
@@ -257,8 +290,8 @@ function DailyGame({
   // Guardar el progreso.
   useEffect(() => {
     if (!loaded) return;
-    saveProgress(day, level, { entries, revealed: [...revealed], elapsed, completed });
-  }, [day, level, loaded, entries, revealed, elapsed, completed]);
+    saveProgress(day, level, { entries, revealed: [...revealed], elapsed, completed, checks });
+  }, [day, level, loaded, entries, revealed, elapsed, completed, checks]);
 
   // Detectar cuando se completa el crucigrama.
   useEffect(() => {
@@ -267,7 +300,14 @@ function DailyGame({
     setShowResult(true);
     onCompleted(level);
     recordWin(day, level, revealed.size === 0).then(setStats);
-  }, [loaded, completed, puzzle, entries, day, level, revealed, onCompleted]);
+    reportResult({
+      game: 'crucigrama',
+      variant: level,
+      day,
+      score: crosswordScore(elapsed, revealed.size, checks),
+      details: { elapsed, revealed: revealed.size, checks, words: puzzle.words.length },
+    });
+  }, [loaded, completed, puzzle, entries, day, level, revealed, onCompleted, elapsed, checks]);
 
   const activeWord: PlacedWord =
     wordAt(puzzle, selected, direction) ??
@@ -363,6 +403,7 @@ function DailyGame({
       }),
     );
     setWrong(bad);
+    setChecks((c) => c + 1);
   };
 
   const revealLetter = () => {
@@ -394,10 +435,18 @@ function DailyGame({
   }, []);
 
   const number = puzzleNumber(day);
-  const boardSize = Math.min(width - 24, 460);
+  // La grilla usa el espacio que realmente queda libre (ancho y alto), así entra
+  // también en pantallas apaisadas o bajas como las de una notebook.
+  const fallback = Math.min(width - 24, 460);
+  const boardSize = scroll
+    ? Math.min(width - 24, 420)
+    : boardArea
+    ? Math.max(160, Math.min(boardArea.width - 24, boardArea.height - ACTIONS_HEIGHT, 460))
+    : fallback;
 
+  const Body = scroll ? ScrollView : View;
   return (
-    <View style={styles.container}>
+    <Body style={styles.container} contentContainerStyle={scroll ? styles.scrollContent : undefined}>
       <Header
         title="⚽ Crucigrama Futbolero"
         subtitle={subtitle}
@@ -411,7 +460,13 @@ function DailyGame({
         {tabs}
       </Header>
 
-      <View style={styles.boardArea}>
+      <View
+        style={[styles.boardArea, scroll && styles.boardAreaScroll]}
+        onLayout={(e) => {
+          const { width: w, height: h } = e.nativeEvent.layout;
+          setBoardArea((prev) => (prev && prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+        }}
+      >
         <Grid
           puzzle={puzzle}
           entries={entries}
@@ -430,7 +485,7 @@ function DailyGame({
       </View>
 
       <View style={styles.bottom}>
-        <View style={styles.clueBar}>
+        <View style={[styles.clueBar, compact && styles.clueBarCompact]}>
           <Pressable onPress={() => moveWord(-1)} style={styles.arrow} accessibilityLabel="Pista anterior">
             <Text style={styles.arrowText}>‹</Text>
           </Pressable>
@@ -451,7 +506,9 @@ function DailyGame({
             <Text style={styles.arrowText}>›</Text>
           </Pressable>
         </View>
-        <Keyboard onLetter={onLetter} onBackspace={onBackspace} />
+        {!hasPhysicalKeyboard(width) && (
+          <Keyboard onLetter={onLetter} onBackspace={onBackspace} compact={compact} />
+        )}
       </View>
 
       <CluesModal
@@ -471,10 +528,11 @@ function DailyGame({
         level={level}
         elapsed={elapsed}
         revealedCount={revealed.size}
+        checks={checks}
         stats={stats}
         onClose={() => setShowResult(false)}
       />
-    </View>
+    </Body>
   );
 }
 
@@ -559,6 +617,7 @@ function ResultModal({
   level,
   elapsed,
   revealedCount,
+  checks,
   stats,
   onClose,
 }: {
@@ -568,6 +627,7 @@ function ResultModal({
   level: Level;
   elapsed: number;
   revealedCount: number;
+  checks: number;
   stats: Stats;
   onClose: () => void;
 }) {
@@ -604,6 +664,12 @@ function ResultModal({
             <Text style={styles.modalBody}>
               Completaste el crucigrama #{number} ({levelLabel(level).toLowerCase()}) en {formatTime(elapsed)}
               {revealedCount === 0 ? ' sin ayuda.' : ` con ${revealedCount} letra(s) revelada(s).`}
+            </Text>
+          )}
+          {completed && (revealedCount > 0 || checks > 0) && (
+            <Text style={styles.modalBody}>
+              Tiempo para las tablas: {formatTime(crosswordScore(elapsed, revealedCount, checks))} (+
+              {REVEAL_PENALTY} s por letra revelada y +{CHECK_PENALTY} s por cada Revisar)
             </Text>
           )}
           <View style={styles.statsRow}>
@@ -654,10 +720,14 @@ function formatCountdown(ms: number) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.pitch },
-  app: { flex: 1, backgroundColor: colors.surface },
+  safe: { flex: 1, backgroundColor: colors.pitchDark },
+  // En pantallas grandes la app se ve como una columna de celular, centrada.
+  app: { flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', backgroundColor: colors.surface },
   screen: { flex: 1 },
   container: { flex: 1, backgroundColor: colors.surface },
+  scrollContent: { flexGrow: 1 },
+  boardAreaScroll: { flexGrow: 0, flexShrink: 0, flexBasis: 'auto' },
+  clueBarCompact: { minHeight: 50 },
   timer: { alignItems: 'flex-end' },
   timerText: { color: colors.chalk, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
   streak: { color: colors.chalk, fontSize: 13, marginTop: 2 },

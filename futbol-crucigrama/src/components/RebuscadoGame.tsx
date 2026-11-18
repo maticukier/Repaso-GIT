@@ -82,7 +82,13 @@ function Reveal({ categoria, pick }: { categoria: Categoria; pick: number | null
       {visible.map((a) => (
         <AnswerRow key={a.jugador.id} name={a.jugador.name} points={a.points} mine={a.jugador.id === pick} />
       ))}
-      {pickHidden && (
+      {pick !== null && points > 0 && pickIndex < 0 && (
+        <>
+          <Text style={styles.ellipsis}>…</Text>
+          <AnswerRow name={getJugador(pick).name} points={points} mine />
+        </>
+      )}
+      {pickHidden && pickIndex >= 0 && (
         <>
           <Text style={styles.ellipsis}>…</Text>
           <AnswerRow name={answers[pickIndex].jugador.name} points={answers[pickIndex].points} mine />

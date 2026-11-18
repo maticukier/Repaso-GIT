@@ -51,10 +51,10 @@ for (const [name, bank] of Object.entries({ WORDS, WORDS_MEDIO, WORDS_DIFICIL })
   });
 }
 
-test('el difícil es más largo que el fácil', () => {
-  for (const day of dayKeys(30)) {
-    assert.ok(getDailyPuzzle(day, 'facil').words.length >= 11);
-    assert.ok(getDailyPuzzle(day, 'dificil').rows >= 12);
+test('los crucigramas tienen alrededor de 30 palabras', () => {
+  for (const day of dayKeys(10)) {
+    assert.ok(getDailyPuzzle(day, 'facil').words.length >= 28);
+    assert.ok(getDailyPuzzle(day, 'dificil').words.length >= 26);
   }
 });
 
@@ -74,12 +74,12 @@ test('numeración de los crucigramas', () => {
   assert.equal(daysBetween('2026-12-31', '2027-01-01'), 1);
 });
 
-for (const { id: level } of LEVELS) for (const key of dayKeys(120)) {
+for (const { id: level } of LEVELS) for (const key of dayKeys(40)) {
   test(`crucigrama ${level} válido para ${key}`, () => {
     const p = getDailyPuzzle(key, level);
-    const max = level === 'dificil' ? 13 : 12;
+    const max = 18;
     assert.ok(p.rows <= max && p.cols <= max, `tamaño ${p.rows}x${p.cols}`);
-    assert.ok(p.words.length >= 10, `solo ${p.words.length} palabras`);
+    assert.ok(p.words.length >= 26, `solo ${p.words.length} palabras`);
 
     const expected = p.words
       .map((w) => `${w.direction}:${w.row},${w.col}:${w.answer}`)

@@ -7,6 +7,8 @@ export type Progress = {
   revealed: string[];
   elapsed: number;
   completed: boolean;
+  // Veces que se usó Revisar (suma tiempo en las tablas).
+  checks?: number;
 };
 
 export type Stats = {
@@ -26,8 +28,8 @@ export const EMPTY_STATS: Stats = {
 };
 
 // El nivel fácil usa las claves originales para conservar el progreso guardado.
-// v2: grillas más grandes desde noviembre de 2026 (el progreso viejo no encaja en ellas).
-const progressKey = (day: string, level: Level) => `progress2:${level}:${day}`;
+// v3: grillas de 30 palabras desde noviembre de 2026 (el progreso viejo no encaja en ellas).
+const progressKey = (day: string, level: Level) => `progress3:${level}:${day}`;
 const statsKey = (level: Level) => (level === 'facil' ? 'stats' : `stats:${level}`);
 
 async function readJson<T>(key: string): Promise<T | null> {
@@ -39,12 +41,53 @@ async function readJson<T>(key: string): Promise<T | null> {
   }
 }
 
+// La sincronización con la nube (src/lib/sync.ts) se engancha acá; storage no la
+// importa para que la lógica de los juegos siga funcionando sin conexión ni cuenta.
+type WriteListener = (key: string, value: unknown) => void;
+type ResultListener = (result: GameResult) => void;
+let writeListener: WriteListener | null = null;
+let resultListener: ResultListener | null = null;
+export function setStorageListeners(onWrite: WriteListener | null, onResult: ResultListener | null) {
+  writeListener = onWrite;
+  resultListener = onResult;
+}
+
 async function writeJson(key: string, value: unknown) {
   try {
     await AsyncStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Si falla el guardado, el juego sigue funcionando en memoria.
   }
+  writeListener?.(key, value);
+}
+
+// Resultado final de un juego del día, para las tablas de posiciones.
+// score: crucigrama = segundos con penalizaciones; adivina / carta = intentos (7 si no
+// acertó); rebuscado / ranking = puntos.
+export type GameResult = {
+  game: 'crucigrama' | 'adivina' | 'carta' | 'rebuscado' | 'ranking';
+  variant: string;
+  day: string;
+  score: number;
+  details: Record<string, unknown>;
+};
+
+export const resultKey = (r: Pick<GameResult, 'game' | 'variant' | 'day'>) =>
+  `result:${r.game}:${r.variant}:${r.day}`;
+
+// Se guarda también en el dispositivo: si alguien juega sin cuenta y después inicia
+// sesión, sus resultados suben igual.
+export function reportResult(result: GameResult) {
+  writeJson(resultKey(result), result);
+  resultListener?.(result);
+}
+
+// Penalizaciones del crucigrama: cada letra revelada y cada uso de Revisar suman tiempo.
+export const REVEAL_PENALTY = 30;
+export const CHECK_PENALTY = 10;
+
+export function crosswordScore(elapsed: number, revealed: number, checks: number) {
+  return elapsed + revealed * REVEAL_PENALTY + checks * CHECK_PENALTY;
 }
 
 export const loadProgress = (day: string, level: Level) =>
